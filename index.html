@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Fantasy Ads Report</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one working column of four numbered steps (upload, review, totals, PDFs), ledger-like tables inside. */
+:root{
+  --bg:#f3f4f7; --panel:#ffffff; --ink:#1b2333; --muted:#5d6678; --line:#d9dee8; --soft:#eef1f7;
+  --navy:#0b2a5b; --navy-ink:#ffffff; --brass:#b9842a; --brass-soft:#f6ecd9;
+  --ok:#1f7a4d; --ok-soft:#e3f3ea; --warn:#a15c00; --warn-soft:#fff3dc; --bad:#b3261e; --bad-soft:#fde7e5;
+  --font-ui:"Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
+  --font-num:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1420; --panel:#171e2c; --ink:#e7ebf3; --muted:#9aa4b7; --line:#2a3447; --soft:#1d2637;
+  --navy:#8fb0ea; --navy-ink:#0f1420; --brass:#e0b45e; --brass-soft:#2c2416;
+  --ok:#6fd19f; --ok-soft:#15291f; --warn:#f0b459; --warn-soft:#2e2412; --bad:#ff8a80; --bad-soft:#331a19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1420; --panel:#171e2c; --ink:#e7ebf3; --muted:#9aa4b7; --line:#2a3447; --soft:#1d2637;
+  --navy:#8fb0ea; --navy-ink:#0f1420; --brass:#e0b45e; --brass-soft:#2c2416;
+  --ok:#6fd19f; --ok-soft:#15291f; --warn:#f0b459; --warn-soft:#2e2412; --bad:#ff8a80; --bad-soft:#331a19; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:15px;line-height:1.55}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px;display:grid;gap:22px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:2px solid var(--navy);padding-bottom:14px}
+header.top h1{margin:0;font-size:28px;line-height:1.15;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+header.top p{margin:4px 0 0;color:var(--muted);max-width:62ch}
+.month-pill{font-family:var(--font-num);font-size:13px;border:1px solid var(--line);background:var(--panel);padding:6px 12px;border-radius:999px;white-space:nowrap}
+section.step{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;display:grid;gap:16px;min-width:0}
+.step-h{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.step-n{font-family:var(--font-num);font-size:12px;font-weight:600;color:var(--brass);border:1px solid var(--brass);border-radius:4px;padding:1px 7px}
+.step-h h2{margin:0;font-size:19px;font-weight:700}
+.step-h .hint{color:var(--muted);font-size:14px;flex-basis:100%}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:14px;display:grid;gap:6px;background:var(--soft);min-width:0}
+.drop.has{border-style:solid;border-color:var(--ok);background:var(--ok-soft)}
+.drop b{font-size:15px}
+.drop .fn{font-family:var(--font-num);font-size:12px;color:var(--muted);word-break:break-all}
+.drop input[type=file]{font-size:13px;max-width:100%}
+.fields{display:flex;flex-wrap:wrap;gap:14px}
+.field{display:grid;gap:4px;min-width:150px}
+.field label{font-size:13px;color:var(--muted);font-weight:500}
+input[type=number],input[type=date],input[type=text],textarea,select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 9px}
+input[type=number]{font-family:var(--font-num);width:140px}
+textarea{font-family:var(--font-num);font-size:13px;width:100%;min-height:150px;resize:vertical;box-sizing:border-box}
+select{font-size:13px;max-width:100%}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{background:var(--navy);color:var(--navy-ink);text-align:left;font-weight:600;padding:7px 9px;white-space:nowrap}
+td{padding:6px 9px;border-top:1px solid var(--line);vertical-align:middle}
+td.num,th.num{text-align:right;font-family:var(--font-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.sec td{background:var(--soft);font-weight:700}
+tr.sub td{font-weight:700;border-top:1.5px solid var(--navy)}
+tr.grand td{background:var(--navy);color:var(--navy-ink);font-weight:700}
+tr.review td{background:var(--warn-soft)}
+.cname{min-width:220px;max-width:420px;word-break:break-word}
+.why{font-size:12px;color:var(--muted)}
+.chip{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:1px 9px;white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.bad{background:var(--bad-soft);color:var(--bad)}
+.acct-h{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.acct-h h3{margin:0;font-size:16px}
+.stats{display:flex;flex-wrap:wrap;gap:8px 18px;color:var(--muted);font-size:13.5px}
+.stats b{color:var(--ink);font-family:var(--font-num);font-weight:600}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-top:3px solid var(--brass);border-radius:8px;padding:12px 14px;display:grid;gap:2px;min-width:0}
+.card .k{font-size:12.5px;color:var(--muted);font-weight:600;letter-spacing:.02em}
+.card .v{font-family:var(--font-num);font-size:20px;font-weight:600;color:var(--navy)}
+.card .s{font-family:var(--font-num);font-size:13px;color:var(--muted)}
+.card.total{border-top-color:var(--navy);background:var(--soft)}
+ul.checks{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+ul.checks li{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.btns{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button{font:inherit;font-weight:600;border-radius:6px;padding:8px 16px;cursor:pointer;border:1px solid var(--navy);background:var(--navy);color:var(--navy-ink)}
+button.ghost{background:transparent;color:var(--navy)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.note{font-size:13.5px;color:var(--muted)}
+.banner{border-radius:8px;padding:10px 14px;font-size:14px}
+.banner.warn{background:var(--warn-soft);color:var(--warn)}
+.banner.bad{background:var(--bad-soft);color:var(--bad)}
+.banner.ok{background:var(--ok-soft);color:var(--ok)}
+.files{display:grid;gap:6px}
+.file{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:6px;padding:7px 10px}
+.file span{font-family:var(--font-num);font-size:13px;word-break:break-all;min-width:0}
+.file button{padding:4px 12px;font-size:13px}
+.filter{display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--muted)}
+details summary{cursor:pointer;color:var(--navy);font-weight:600;font-size:14px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Fantasy Ads Report</h1>
+      <p>দুই ad account-এর মাসিক sheet দিন। খরচ কোম্পানি অনুযায়ী ভাগ হবে, হিসাব মেলানো হবে, তারপর ৫টি A4 PDF তৈরি হবে: প্রতিটা কোম্পানির একটা, আর সব মিলিয়ে একটা Grand Total।</p>
+    </div>
+    <span class="month-pill" id="monthPill">মাস: ফাইল দিলে বসবে</span>
+  </header>
+
+  <section class="step" aria-labelledby="s1">
+    <div class="step-h"><span class="step-n">ধাপ ১</span><h2 id="s1">ফাইল ও তথ্য দিন</h2>
+      <span class="hint">Ads Manager থেকে campaign level export (xlsx বা csv), পুরো মাসের।</span></div>
+    <div class="grid2">
+      <div class="drop" id="dropEF"><b>English Fantasy ad account</b><span class="fn" id="fnEF">কোনো ফাইল দেওয়া হয়নি</span>
+        <input type="file" id="fileEF" accept=".csv,.xlsx,.xls"></div>
+      <div class="drop" id="dropFP"><b>Fantasy Publication ad account</b><span class="fn" id="fnFP">কোনো ফাইল দেওয়া হয়নি</span>
+        <input type="file" id="fileFP" accept=".csv,.xlsx,.xls"></div>
+    </div>
+    <div class="fields">
+      <div class="field"><label for="rate">Exchange rate (১ USD = কত টাকা)</label><input type="number" id="rate" step="0.01" min="0" placeholder="যেমন 129"></div>
+      <div class="field"><label for="rdate">Report date</label><input type="date" id="rdate"></div>
+    </div>
+    <div class="field" style="min-width:0">
+      <label for="other">Other Costs: Date, Tool, Dollar Spent (Excel বা sheet থেকে কপি করে পেস্ট করুন)</label>
+      <textarea id="other" placeholder="Sep 1	Claude	23.23&#10;Sep 7	Zoom	19.1&#10;	Payment Cancel	27*0.50 = 13.5"></textarea>
+      <div id="otherPreview"></div>
+    </div>
+    <div class="btns"><button class="ghost" id="demoBtn" type="button">ডেমো ডাটা দিয়ে দেখুন</button>
+      <span class="note">ডেমো ডাটা বানানো উদাহরণ, আপনার আসল হিসাব না।</span></div>
+    <div id="demoBanner"></div>
+  </section>
+
+  <section class="step" aria-labelledby="s2">
+    <div class="step-h"><span class="step-n">ধাপ ২</span><h2 id="s2">ক্যাম্পেইন যাচাই</h2>
+      <span class="hint">নামের keyword দেখে কোম্পানি বসানো হয়েছে। হলুদ সারিগুলো বোঝা যায়নি, ড্রপডাউন থেকে বেছে দিন। আপনার বাছাই পরের মাসেও মনে থাকবে।</span></div>
+    <div id="review"><p class="note">ফাইল দিলে এখানে খরচ হওয়া সব ক্যাম্পেইন দেখাবে।</p></div>
+  </section>
+
+  <section class="step" aria-labelledby="s3">
+    <div class="step-h"><span class="step-n">ধাপ ৩</span><h2 id="s3">হিসাবের সারাংশ</h2></div>
+    <div id="summary"><p class="note">ক্যাম্পেইন যাচাই শেষ হলে এখানে কোম্পানি অনুযায়ী মোট আর মিলানোর ফল দেখাবে।</p></div>
+  </section>
+
+  <section class="step" aria-labelledby="s4">
+    <div class="step-h"><span class="step-n">ধাপ ৪</span><h2 id="s4">PDF তৈরি</h2>
+      <span class="hint">৫টি PDF: English Fantasy, Fantasy Publication, Fantasy Global Education, Rajon Sir Page, আর Grand Total Summary। কোনো কোম্পানির ক্যাম্পেইন যে অ্যাকাউন্ট থেকেই আসুক, সেই কোম্পানির PDF-এ যাবে, উৎস লেখা থাকবে। Other Costs থাকবে English Fantasy-র PDF-এ।</span></div>
+    <label class="filter"><input type="checkbox" id="detailOpt"> অ্যাকাউন্ট অনুযায়ী আলাদা বিস্তারিত PDF-ও চাই (ঐচ্ছিক)</label>
+    <div class="btns"><button id="buildBtn" type="button" disabled>PDF তৈরি করুন</button><span class="note" id="buildNote"></span></div>
+    <div id="out"></div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+"use strict";
+/* ============================ storage (per-viewer convenience) ============================ */
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const APP = { acct:{EF:null, FP:null}, overrides: LS.get("far_overrides", {}), files:[], demo:false };
+
+/* ============================ money helpers (integer cents) ============================ */
+const toCents = v => { if (v == null || v === "") return 0; const n = typeof v === "number" ? v : parseFloat(String(v).replace(/[^0-9.\-]/g, "")); return isFinite(n) ? Math.round(n * 100) : 0; };
+const rateMilli = () => { const r = parseFloat(document.getElementById("rate").value); return isFinite(r) && r > 0 ? Math.round(r * 1000) : 0; };
+const bdtPaisa = c => Math.floor((c * rateMilli() + 500) / 1000);           // half-up, exact integer math
+const grp3 = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+const money = c => { const s = c < 0 ? "-" : ""; c = Math.abs(c); return s + grp3(Math.floor(c / 100)) + "." + String(c % 100).padStart(2, "0"); };
+const usd = c => money(c); const bdt = c => money(bdtPaisa(c));
+const int = n => grp3(Math.round(n));
+const sum = (a, f) => a.reduce((t, x) => t + f(x), 0);
+function shares(vals, totalBp = 10000){ // largest remainder, basis points
+  const tot = vals.reduce((a, b) => a + b, 0); if (!tot) return vals.map(() => 0);
+  const raw = vals.map(v => v * totalBp / tot), fl = raw.map(Math.floor); let left = totalBp - fl.reduce((a, b) => a + b, 0);
+  raw.map((r, i) => [r - fl[i], i]).sort((a, b) => b[0] - a[0]).slice(0, left).forEach(([, i]) => fl[i]++);
+  return fl;
+}
+const pct = bp => (bp / 100).toFixed(2) + "%";
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ============================ sheet parsing ============================ */
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONF = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+function toDate(v){
+  if (v instanceof Date) return v;
+  const s = String(v || "").trim(); let m = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if (m) return new Date(+m[3] < 100 ? 2000 + +m[3] : +m[3], +m[1] - 1, +m[2]);
+  const d = new Date(s); return isNaN(d) ? null : d;
+}
+function parseWorkbook(wb){
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const aoa = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
+  const hi = aoa.findIndex(r => r.some(c => /campaign name/i.test(String(c))));
+  if (hi < 0) throw new Error("ফাইলে 'Campaign name' কলাম পাওয়া যায়নি। Ads Manager থেকে campaign level export দিন।");
+  const H = aoa[hi].map(h => String(h).trim());
+  const col = (re) => H.findIndex(h => re.test(h));
+  const c = { name: col(/^campaign name$/i), deliv: col(/campaign delivery/i), res: col(/^results$/i), ind: col(/^result indicator$/i),
+    spend: col(/^amount spent/i), pur: col(/^purchases$/i), start: col(/reporting starts/i), end: col(/reporting ends/i) };
+  if (c.spend < 0) throw new Error("ফাইলে 'Amount spent' কলাম পাওয়া যায়নি।");
+  const currency = (H[c.spend].match(/\(([A-Z]{3})\)/) || [, "USD"])[1];
+  const rows = [];
+  for (let i = hi + 1; i < aoa.length; i++){
+    const r = aoa[i]; const name = String(r[c.name] ?? "").trim(); if (!name) continue;
+    if (/^total/i.test(name) && !r[c.ind]) continue; // Ads Manager summary line
+    rows.push({ name, deliv: c.deliv >= 0 ? String(r[c.deliv]) : "", results: c.res >= 0 ? (+r[c.res] || 0) : 0,
+      ind: c.ind >= 0 ? String(r[c.ind] || "") : "", cents: toCents(r[c.spend]), pur: c.pur >= 0 ? (+r[c.pur] || 0) : 0,
+      start: c.start >= 0 ? toDate(r[c.start]) : null, end: c.end >= 0 ? toDate(r[c.end]) : null });
+  }
+  return { rows, currency };
+}
+async function readFile(file){
+  const isCsv = /\.csv$/i.test(file.name);
+  const wb = isCsv ? XLSX.read(await file.text(), {type:"string", raw:true})
+                   : XLSX.read(await file.arrayBuffer(), {type:"array", cellDates:true});
+  return parseWorkbook(wb);
+}
+
+/* ============================ campaign type & result ============================ */
+function typeOf(ind){
+  const s = String(ind).toLowerCase();
+  if (!s || s === "-") return {type:"Other", unit:""};
+  if (s.includes("purchase")) return {type:"Sales", unit:"Purchases"};
+  if (s.includes("messaging")) return {type:"Message", unit:"Conversations"};
+  if (s.includes("landing_page_view")) return {type:"Traffic", unit:"Landing Page Views"};
+  if (s.includes("link_click")) return {type:"Traffic", unit:"Link Clicks"};
+  if (s.includes("thruplay")) return {type:"ThruPlay", unit:"ThruPlays"};
+  if (s.includes("post_engagement")) return {type:"Engagement", unit:"Engagements"};
+  if (s.includes("video_view")) return {type:"Video View", unit:"Video Views"};
+  if (s.includes("leadgen") || /\blead/.test(s)) return {type:"Lead Form", unit:"Leads"};
+  if (/(^|[:._])like$/.test(s) || s.includes("page_like")) return {type:"Page Like", unit:"Page Likes"};
+  if (/(^|[:._])reach$/.test(s)) return {type:"Awareness", unit:"Reach"};
+  if (s.includes("call")) return {type:"Calls", unit:"Calls"};
+  return {type:"Other", unit:s.replace(/^actions:/, "").replace(/_/g, " ")};
+}
+const PAGE_TYPES = new Set(["Awareness","Page Like","Engagement","ThruPlay","Video View"]);
+
+/* ============================ classification (keyword based, typo tolerant) ============================ */
+const norm = s => String(s).toLowerCase().replace(/[|_\-–—/\\(){}\[\],.:;#+&$@!?'"*=]+/g, " ").replace(/\s+/g, " ").trim();
+const KW = {
+  GL:   [/glob/, /\bfge\b/],
+  GLW:  [/abroad|abaord|aboard|abrod|abroard/, /\bvisa\b/, /study ab/],
+  FP:   [/\bbo{1,2}ks?\b/, /book/, /\bboi\b/, /বই/, /publication|publicaiton|pblication/, /pre ?order/, /vocab/],
+  JOB:  [/\bjob/, /hiring/, /recruit/, /vacanc/, /circular/],
+  RJ:   [/rajon/],
+  EF:   [/\bef\b/, /english fantasy/, /cou?r?se\b|cource|coures|\bcourse/, /ielts/, /spoken/, /batch/, /residen/, /admission/, /\bclass/, /crash|carsh/, /reminis|reminit/, /grammar/, /\bpte\b/, /\bkids?\b/],
+  EFW:  [/\bwa\b/, /\bwa ?\d/, /\bwp\b/, /\bwp ?\d/, /whats ?app/, /sales campaign/, /promotional/, /messag/, /\bsms\b/, /\blead\b/]
+};
+const hit = (n, list) => { for (const re of list){ const m = n.match(re); if (m) return m[0].trim(); } return null; };
+function autoClassify(name, acct){
+  const n = norm(name);
+  const g = hit(n, KW.GL), gw = hit(n, KW.GLW), b = hit(n, KW.FP), j = hit(n, KW.JOB), r = hit(n, KW.RJ), e = hit(n, KW.EF), w = hit(n, KW.EFW);
+  if (g && b) return {pick:null, why:`"${g}" ও "${b}" দুটোই আছে`, suggest:null};
+  if (g) return {pick:"GL", why:`"${g}" দেখে Global Education`};
+  if (b && j) return {pick:null, why:`"${b}" ও "${j}" দুটোই আছে`, suggest:null};
+  if (b) return {pick:"FP", why:`"${b}" দেখে Fantasy Publication`};
+  if (j) return {pick:"EF_JOB", why:`"${j}" দেখে Recruitment`};
+  if (r) return {pick:"RJ", why:`"${r}" দেখে Rajon Sir Page`};
+  if (gw && e) return {pick:null, why:`"${e}" (কোর্স) ও "${gw}" (স্টাডি অ্যাব্রড) দুটোই আছে`, suggest:"EF"};
+  if (gw) return {pick:"GL", why:`"${gw}" দেখে Global Education`};
+  if (e) return {pick:"EF", why:`"${e}" দেখে English Fantasy`};
+  if (w && acct === "EF") return {pick:"EF", why:`"${w}" দেখে Course (English Fantasy অ্যাকাউন্ট)`};
+  if (w) return {pick:null, why:`শুধু "${w}" আছে, কোন কোম্পানির বোঝা যায়নি`, suggest:"FP"};
+  return {pick:null, why:"চেনা কোনো keyword নেই", suggest: acct === "EF" ? "EF" : "FP"};
+}
+const PICKS = [["EF","English Fantasy (Course / Page)"],["EF_JOB","English Fantasy (Recruitment)"],["FP","Fantasy Publication"],["GL","Fantasy Global Education"],["RJ","Rajon Sir Page"]];
+const COMP = {EF:"English Fantasy", FP:"Fantasy Publication", GL:"Fantasy Global Education", RJ:"Rajon Sir Page"};
+const ACCTN = {EF:"English Fantasy", FP:"Fantasy Publication"};
+const okey = (acct, name) => acct + "|" + norm(name);
+
+function classifyAll(acct){
+  const A = APP.acct[acct]; if (!A) return;
+  A.camps = A.rows.filter(r => r.cents > 0).map(r => {
+    const t = typeOf(r.ind); const auto = autoClassify(r.name, acct);
+    const ov = APP.overrides[okey(acct, r.name)];
+    const pick = ov || auto.pick;
+    const comp = pick === "EF_JOB" ? "EF" : pick;
+    let group = null;
+    if (comp === "EF") group = pick === "EF_JOB" ? "Recruitment" : (PAGE_TYPES.has(t.type) ? "Page" : "Course");
+    else if (comp === "FP") group = PAGE_TYPES.has(t.type) ? "Others" : "Book";
+    else if (comp === "GL") group = "Global"; else if (comp === "RJ") group = "Rajon";
+    let result;
+    if (comp === "FP" && t.type === "Sales") result = `${int(r.pur)} Purchases`;
+    else { result = r.results ? `${int(r.results)} ${t.unit}`.trim() : "-"; if (comp === "FP" && group === "Book" && t.type !== "Sales" && r.pur) result += ` + ${int(r.pur)} Purchases`; }
+    return {...r, type:t.type, unit:t.unit, pick, comp, group, result, review: !pick, why: ov ? "আপনার বাছাই" : auto.why, suggest: auto.suggest, overridden: !!ov};
+  }).sort((a, b) => b.cents - a.cents);
+}
+
+/* ============================ grouping helpers ============================ */
+const GORDER = {EF:["Course","Page","Recruitment"], FP:["Book","Others"], GL:["Global"], RJ:["Rajon"]};
+const ACCT_ORDER = {EF:["EF","FP","GL","RJ"], FP:["FP","EF","GL","RJ"]};
+function groupLabel(comp, g, rows){
+  const types = [...new Set(rows.map(r => r.type))].join(", ");
+  return ({Course:"Course Campaigns", Page:"Others - " + types, Recruitment:"Others - Recruitment (Job Post)", Book:"Book Campaigns", Others:"Others - " + types, Global:null, Rajon:null})[g];
+}
+function compGroups(camps, comp){
+  return GORDER[comp].map(g => { const rows = camps.filter(c => c.comp === comp && c.group === g); return {g, rows, cents: sum(rows, r => r.cents), label: rows.length ? groupLabel(comp, g, rows) : null}; }).filter(x => x.rows.length);
+}
+const compCents = (camps, comp) => sum(camps.filter(c => c.comp === comp), r => r.cents);
+function resultTotals(rows){ // unit -> count (book sales use purchases)
+  const m = new Map();
+  rows.forEach(r => { if (r.comp === "FP" && r.type === "Sales"){ m.set("Purchases", (m.get("Purchases") || 0) + r.pur); return; }
+    if (r.results && r.unit) m.set(r.unit, (m.get(r.unit) || 0) + r.results);
+    if (r.comp === "FP" && r.group === "Book" && r.pur) m.set("Purchases", (m.get("Purchases") || 0) + r.pur); });
+  return m;
+}
+function keyResult(comp, g, rows){
+  if (comp === "FP" && g === "Book") return int(sum(rows, r => r.pur)) + " Purchases";
+  const m = resultTotals(rows); if (m.size === 1){ const [[u, v]] = [...m]; return int(v) + " " + u; }
+  return [...new Set(rows.map(r => r.type))].join(", ");
+}
+
+/* ============================ other costs ============================ */
+const TOOLMAP = {"open ai":"OpenAI","openai":"OpenAI","chatgpt":"OpenAI","chat gpt":"OpenAI","meta pay":"Meta Pay","metapay":"Meta Pay","zoom":"Zoom","claude":"Claude","adobe":"Adobe","workspace":"Workspace","google workspace":"Google Workspace","payment cancel":"Payment Cancel","canva":"Canva","capcut":"CapCut","cap cut":"CapCut","freepik":"Freepik","envato":"Envato"};
+function parseOther(text, mi){
+  const out = [], warns = [];
+  text.split(/\r?\n/).forEach((line, li) => {
+    if (!line.trim()) return;
+    if (/date/i.test(line) && /(tool|dollar|amount)/i.test(line)) return;
+    let parts = line.split("\t"); if (parts.length < 3) parts = line.split(/\s{2,}|,(?=\s*[\d$])/);
+    if (parts.length < 2){ warns.push(`লাইন ${li + 1} বোঝা যায়নি: "${line.trim()}"`); return; }
+    let dateS = "", tool = "", amtS = "";
+    if (parts.length >= 3){ dateS = parts[0].trim(); tool = parts[1].trim(); amtS = parts.slice(2).join(" ").trim(); }
+    else { tool = parts[0].trim(); amtS = parts[1].trim(); }
+    let detail = "", cents = 0;
+    const prod = s => { const m = s.match(/([\d.]+)\s*[*x×]\s*\$?\s*([\d.]+)/i); return m ? {a:+m[1], b:+m[2]} : null; };
+    if (amtS.includes("=")){
+      const [l, r] = amtS.split("="); cents = toCents(r); const p = prod(l);
+      if (p){ detail = `${p.a} x $${p.b.toFixed(2)}`; if (Math.round(p.a * p.b * 100) !== cents) warns.push(`${tool}: ${l.trim()} = ${(p.a * p.b).toFixed(2)}, কিন্তু লেখা আছে ${r.trim()}`); }
+    } else { const p = prod(amtS); if (p){ detail = `${p.a} x $${p.b.toFixed(2)}`; cents = Math.round(p.a * p.b * 100); } else cents = toCents(amtS); }
+    if (!cents){ warns.push(`লাইন ${li + 1}: টাকার অঙ্ক পাওয়া যায়নি`); return; }
+    const key = tool.toLowerCase().replace(/\s+/g, " ").trim();
+    const toolN = TOOLMAP[key] || tool.replace(/\s+/g, " ").replace(/\b\w/g, ch => ch.toUpperCase());
+    let date = mi ? `${MON[mi.m]} ${mi.y}` : "";
+    const m1 = dateS.match(/([A-Za-z]+)\s*(\d{1,2})/) || null, m2 = dateS.match(/(\d{1,2})\s*([A-Za-z]+)/) || null, m3 = dateS.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    let day = null, mon = mi ? mi.m : null;
+    if (m3){ day = +m3[3]; mon = +m3[2] - 1; } else if (m1){ day = +m1[2]; const k = MON.findIndex(x => m1[1].toLowerCase().startsWith(x.toLowerCase())); if (k >= 0) mon = k; }
+    else if (m2){ day = +m2[1]; const k = MON.findIndex(x => m2[2].toLowerCase().startsWith(x.toLowerCase())); if (k >= 0) mon = k; }
+    if (day && mon != null && mi) date = `${String(day).padStart(2, "0")} ${MON[mon]} ${mi.y}`;
+    out.push({date, sortKey: day || 99, tool: toolN, detail, cents});
+  });
+  out.sort((a, b) => a.sortKey - b.sortKey || 0);
+  return {items: out, warns};
+}
+
+/* ============================ month info ============================ */
+function monthInfo(){
+  const d = (APP.acct.EF?.rows.find(r => r.start)?.start) || (APP.acct.FP?.rows.find(r => r.start)?.start);
+  if (!d) return null;
+  const end = (APP.acct.EF?.rows.find(r => r.end)?.end) || (APP.acct.FP?.rows.find(r => r.end)?.end) || new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  const f = x => `${String(x.getDate()).padStart(2, "0")} ${MON[x.getMonth()]} ${x.getFullYear()}`;
+  return {m: d.getMonth(), y: d.getFullYear(), period: `${f(d)} - ${f(end)}`, full: `${MONF[d.getMonth()]} ${d.getFullYear()}`, tag: `${MON[d.getMonth()]}_${d.getFullYear()}`};
+}
+
+/* ============================ UI: inputs ============================ */
+const $ = id => document.getElementById(id);
+(function initInputs(){
+  const t = new Date(); $("rdate").value = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+  const lr = LS.get("far_rate", ""); if (lr) $("rate").value = lr;
+  const od = LS.get("far_other", ""); if (od) $("other").value = od;
+})();
+async function loadAcct(acct, file){
+  const box = $("drop" + acct), fn = $("fn" + acct);
+  try{
+    const parsed = await readFile(file);
+    APP.acct[acct] = {fileName: file.name, ...parsed}; box.classList.add("has");
+    let warn = "";
+    const looksFP = /pu.?lication|publication|\bfp\b/i.test(file.name), looksEF = /english.?fantasy/i.test(file.name);
+    if (acct === "EF" && looksFP) warn = " (নাম দেখে Fantasy Publication-এর ফাইল মনে হচ্ছে, ঠিক জায়গায় দিয়েছেন তো?)";
+    if (acct === "FP" && looksEF && !looksFP) warn = " (নাম দেখে English Fantasy-র ফাইল মনে হচ্ছে, ঠিক জায়গায় দিয়েছেন তো?)";
+    fn.textContent = file.name + warn;
+    if (parsed.currency !== "USD") fn.textContent += ` (খরচের মুদ্রা ${parsed.currency}, USD না)`;
+  }catch(e){ APP.acct[acct] = null; box.classList.remove("has"); fn.textContent = "ফাইল পড়া যায়নি: " + e.message; }
+  APP.demo = false; $("demoBanner").innerHTML = "";
+  refresh();
+}
+$("fileEF").addEventListener("change", e => e.target.files[0] && loadAcct("EF", e.target.files[0]));
+$("fileFP").addEventListener("change", e => e.target.files[0] && loadAcct("FP", e.target.files[0]));
+$("rate").addEventListener("input", () => { LS.set("far_rate", $("rate").value); refresh(); });
+$("rdate").addEventListener("input", refresh);
+$("other").addEventListener("input", () => { LS.set("far_other", $("other").value); refresh(); });
+
+/* ============================ UI: render ============================ */
+function refresh(){
+  APP.files = []; $("out").innerHTML = "";
+  ["EF","FP"].forEach(classifyAll);
+  const mi = monthInfo(); APP.mi = mi;
+  $("monthPill").textContent = mi ? `মাস: ${mi.full}` : "মাস: ফাইল দিলে বসবে";
+  APP.other = parseOther($("other").value, mi);
+  renderOther(); renderReview(); renderSummary();
+}
+function renderOther(){
+  const {items, warns} = APP.other; const el = $("otherPreview");
+  if (!items.length && !warns.length){ el.innerHTML = ""; return; }
+  const tot = sum(items, i => i.cents);
+  el.innerHTML = (warns.length ? `<div class="banner warn">${warns.map(esc).join("<br>")}</div>` : "") +
+    `<div class="tablebox" style="margin-top:8px"><table><thead><tr><th>#</th><th>Date</th><th>Tool</th><th>Details</th><th class="num">USD</th><th class="num">BDT</th></tr></thead><tbody>` +
+    items.map((i, k) => `<tr><td>${k + 1}</td><td>${esc(i.date)}</td><td>${esc(i.tool)}</td><td>${esc(i.detail || "-")}</td><td class="num">${usd(i.cents)}</td><td class="num">${rateMilli() ? bdt(i.cents) : "-"}</td></tr>`).join("") +
+    `<tr class="grand"><td></td><td colspan="3">মোট ${items.length}টি</td><td class="num">${usd(tot)}</td><td class="num">${rateMilli() ? bdt(tot) : "-"}</td></tr></tbody></table></div>`;
+}
+let onlyReview = false;
+function renderReview(){
+  const el = $("review"); const parts = [];
+  ["EF","FP"].forEach(acct => {
+    const A = APP.acct[acct]; if (!A) return;
+    const fileTot = sum(A.rows, r => r.cents), n = A.camps.length, rv = A.camps.filter(c => c.review).length;
+    const rows = onlyReview ? A.camps.filter(c => c.review) : A.camps;
+    parts.push(`<div class="acct-h"><h3>${ACCTN[acct]} ad account</h3><span class="chip ${rv ? "warn" : "ok"}">${rv ? rv + "টি বেছে দিতে হবে" : "সব বসানো হয়েছে"}</span></div>
+      <div class="stats"><span>ফাইলে ক্যাম্পেইন <b>${A.rows.length}</b></span><span>খরচ হয়েছে <b>${n}</b>টিতে</span><span>মোট খরচ <b>$${usd(fileTot)}</b></span>${rateMilli() ? `<span>BDT <b>${bdt(fileTot)}</b></span>` : ""}</div>
+      <div class="tablebox"><table><thead><tr><th>#</th><th>Campaign</th><th>Type</th><th>Result</th><th class="num">USD</th><th>কোম্পানি</th><th>কেন</th></tr></thead><tbody>` +
+      rows.map((c, i) => `<tr class="${c.review ? "review" : ""}"><td>${i + 1}</td><td class="cname">${esc(c.name)}</td><td>${esc(c.type)}</td><td>${esc(c.result)}</td><td class="num">${usd(c.cents)}</td>
+        <td><select data-k="${esc(okey(acct, c.name))}" aria-label="কোম্পানি">${c.review ? `<option value="">বেছে দিন${c.suggest ? " (মনে হচ্ছে " + COMP[c.suggest] + ")" : ""}</option>` : ""}${PICKS.map(([v, l]) => `<option value="${v}" ${v === c.pick ? "selected" : ""}>${l}</option>`).join("")}</select></td>
+        <td class="why">${esc(c.why)}${c.overridden ? ` <button class="ghost" style="padding:0 6px;font-size:12px" data-reset="${esc(okey(acct, c.name))}" type="button">auto-তে ফেরত</button>` : ""}</td></tr>`).join("") +
+      (rows.length ? "" : `<tr><td colspan="7" class="note">বেছে দেওয়ার মতো কিছু নেই।</td></tr>`) + `</tbody></table></div>`);
+  });
+  if (!parts.length){ el.innerHTML = `<p class="note">ফাইল দিলে এখানে খরচ হওয়া সব ক্যাম্পেইন দেখাবে।</p>`; return; }
+  el.innerHTML = `<label class="filter"><input type="checkbox" id="onlyRv" ${onlyReview ? "checked" : ""}> শুধু যেগুলো বেছে দিতে হবে</label>` + parts.join("");
+  $("onlyRv").addEventListener("change", e => { onlyReview = e.target.checked; renderReview(); });
+  el.querySelectorAll("select[data-k]").forEach(s => s.addEventListener("change", () => {
+    if (s.value){ APP.overrides[s.dataset.k] = s.value; LS.set("far_overrides", APP.overrides); refresh(); }
+  }));
+  el.querySelectorAll("button[data-reset]").forEach(b => b.addEventListener("click", () => { delete APP.overrides[b.dataset.reset]; LS.set("far_overrides", APP.overrides); refresh(); }));
+}
+
+/* ============================ model for summaries + checks ============================ */
+function model(){
+  const accts = ["EF","FP"].filter(a => APP.acct[a]);
+  const camps = a => APP.acct[a].camps;
+  const other = APP.other.items, otherC = sum(other, i => i.cents);
+  const efLines = [];
+  accts.forEach(a => { const c = compCents(camps(a), "EF"); if (c) efLines.push({label:`From ${ACCTN[a]} Ad Account`, acct:a, cents:c}); });
+  if (otherC) efLines.push({label:"Other Costs", kind:"OC", cents:otherC});
+  const rjLines = accts.map(a => ({acct:a, label:`From ${ACCTN[a]} Ad Account`, cents:compCents(camps(a), "RJ")})).filter(x => x.cents);
+  const fpLines = accts.map(a => ({acct:a, label:`From ${ACCTN[a]} Ad Account`, cents:compCents(camps(a), "FP"), rows:camps(a).filter(c => c.comp === "FP")})).filter(x => x.cents);
+  const glLines = accts.map(a => ({acct:a, label:`From ${ACCTN[a]} Ad Account`, cents:compCents(camps(a), "GL"), rows:camps(a).filter(c => c.comp === "GL")})).filter(x => x.cents);
+  const EF = sum(efLines, l => l.cents), FP = sum(fpLines, l => l.cents), GL = sum(glLines, l => l.cents), RJ = sum(rjLines, l => l.cents);
+  const acctTot = Object.fromEntries(accts.map(a => [a, sum(APP.acct[a].rows, r => r.cents)]));
+  return {accts, camps, other, otherC, efLines, fpLines, glLines, rjLines, EF, FP, GL, RJ, TOTAL: EF + FP + GL + RJ, acctTot};
+}
+function checks(M){
+  const L = [];
+  const pending = M.accts.reduce((t, a) => t + M.camps(a).filter(c => c.review).length, 0);
+  L.push([pending === 0, pending ? `${pending}টি ক্যাম্পেইনের কোম্পানি বেছে দেওয়া বাকি` : "সব ক্যাম্পেইনের কোম্পানি বসানো হয়েছে"]);
+  L.push([rateMilli() > 0, rateMilli() ? `Exchange rate: 1 USD = ${(rateMilli() / 1000).toFixed(2)} BDT` : "Exchange rate দেওয়া হয়নি"]);
+  L.push([M.accts.length === 2, M.accts.length === 2 ? "দুই ad account-এর ফাইলই দেওয়া হয়েছে" : "একটা ad account-এর ফাইল দেওয়া হয়নি"]);
+  L.push([M.other.length > 0 && !APP.other.warns.length, M.other.length ? (APP.other.warns.length ? "Other Costs-এ কিছু লাইন ঠিক করতে হবে" : `Other Costs: ${M.other.length}টি খরচ, $${usd(M.otherC)}`) : "Other Costs দেওয়া হয়নি"]);
+  M.accts.forEach(a => {
+    const parts = sum(M.camps(a).filter(c => c.comp), c => c.cents);
+    L.push([parts === M.acctTot[a], `${ACCTN[a]} অ্যাকাউন্ট: কোম্পানিগুলোর যোগফল $${usd(parts)}, ফাইলের মোট $${usd(M.acctTot[a])}`]);
+  });
+  const cross = sum(M.accts, a => M.acctTot[a]) + M.otherC;
+  if (!pending) L.push([cross === M.TOTAL, `Cross-check: দুই অ্যাকাউন্টের মোট + Other Costs = $${usd(cross)}, Grand Total = $${usd(M.TOTAL)}`]);
+  if (APP.mi && M.accts.length === 2){
+    const s = a => APP.acct[a].rows.find(r => r.start)?.start; const d1 = s("EF"), d2 = s("FP");
+    const same = d1 && d2 && d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth();
+    if (d1 && d2) L.push([same, same ? "দুই ফাইলের মাস একই" : "দুই ফাইলের মাস আলাদা, ঠিক ফাইল দিয়েছেন তো?"]);
+  }
+  return L;
+}
+function renderSummary(){
+  const el = $("summary"), M = model();
+  if (!M.accts.length){ el.innerHTML = `<p class="note">ক্যাম্পেইন যাচাই শেষ হলে এখানে কোম্পানি অনুযায়ী মোট আর মিলানোর ফল দেখাবে।</p>`; $("buildBtn").disabled = true; return; }
+  const R = rateMilli(); const b = c => R ? bdt(c) : "-";
+  const card = (k, c, cls = "") => `<div class="card ${cls}"><span class="k">${k}</span><span class="v">$${usd(c)}</span><span class="s">BDT ${b(c)}</span></div>`;
+  let h = `<div class="cards">${card("English Fantasy", M.EF)}${card("Fantasy Publication", M.FP)}${card("Fantasy Global Education", M.GL)}${card("Rajon Sir Page", M.RJ)}${card("Grand Total", M.TOTAL, "total")}</div>`;
+  const tbl = (title, lines, tot) => `<div class="tablebox"><table><thead><tr><th>${title}</th><th class="num">USD</th><th class="num">BDT</th></tr></thead><tbody>${lines.map(l => `<tr><td>${esc(l.label)}</td><td class="num">${usd(l.cents)}</td><td class="num">${b(l.cents)}</td></tr>`).join("")}<tr class="grand"><td>মোট</td><td class="num">${usd(tot)}</td><td class="num">${b(tot)}</td></tr></tbody></table></div>`;
+  h += `<div class="grid2">${tbl("English Fantasy", M.efLines, M.EF)}${tbl("Fantasy Publication", M.fpLines, M.FP)}${tbl("Fantasy Global Education", M.glLines, M.GL)}${tbl("Rajon Sir Page", M.rjLines, M.RJ)}</div>`;
+  const C = checks(M); APP.ready = C.every(c => c[0] || /Other Costs দেওয়া হয়নি|একটা ad account/.test(c[1])) && C[0][0] && C[1][0];
+  h += `<ul class="checks">${C.map(([ok, t]) => `<li><span class="chip ${ok ? "ok" : (/বাকি|দেওয়া হয়নি|ঠিক করতে/.test(t) ? "warn" : "bad")}">${ok ? "ঠিক" : "দেখুন"}</span><span>${esc(t)}</span></li>`).join("")}</ul>`;
+  el.innerHTML = h;
+  $("buildBtn").disabled = !APP.ready;
+  $("buildNote").textContent = APP.ready ? (M.accts.length === 2 && M.other.length ? "সব প্রস্তুত।" : "কিছু ইনপুট বাকি, যা আছে তা দিয়ে PDF হবে।") : "ধাপ ৩-এর হলুদ/লাল লাইনগুলো ঠিক করলে বাটন চালু হবে।";
+}
+
+/* ============================ PDF primitives (jsPDF + autotable) ============================ */
+const NAVY = [11,42,91], GOLD = [200,147,43], INK = [29,35,48], MUTED = [91,100,117], LINE = [213,218,227], ZEBRA = [244,246,250], SUBC = [230,235,243], SUBT = [238,241,247], LIGHT = [201,211,230];
+const PW = 210, ML = 18, CW = 174;
+const T = s => { const o = String(s ?? ""); const r = o.replace(/[–—]/g, "-").replace(/×/g, "x").replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[^\x20-\x7E\xA0-\xFF]/g, "").replace(/\s+/g, " ").trim(); return r || (o.trim() ? "(Bangla name)" : ""); };
+function hdr(doc, o){
+  const y = 12, h = 24;
+  doc.setFillColor(...NAVY); doc.roundedRect(ML, y, CW, h, 1.2, 1.2, "F"); doc.setFillColor(...GOLD); doc.rect(ML, y, 1.4, h, "F");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...GOLD); doc.text(T(o.tag).toUpperCase(), ML + 5, y + 5.8);
+  doc.setFontSize(18); doc.setTextColor(255, 255, 255); doc.text(T(o.company), ML + 5, y + 13.5);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...LIGHT); doc.text(T(o.subtitle), ML + 5, y + 20.2);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(255, 255, 255); doc.text(T(APP.mi.full).toUpperCase(), ML + CW - 5, y + 5.8, {align:"right"});
+  doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(...LIGHT); doc.text(T(o.right || "Facebook Ads Expense Report"), ML + CW - 5, y + 10.5, {align:"right"});
+  return y + h + 4;
+}
+function metaRow(doc, y, items){
+  const w = [52, 42, 40, 40]; let x = ML;
+  items.forEach(([k, v], i) => { doc.setFont("helvetica", "normal"); doc.setFontSize(6.3); doc.setTextColor(...MUTED); doc.text(T(k).toUpperCase(), x, y + 2.5);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8.3); doc.setTextColor(...INK); doc.text(T(v), x, y + 6.6); x += w[i]; });
+  return y + 10;
+}
+function kpiRow(doc, y, items){
+  const h = 17, w = CW / items.length;
+  doc.setFillColor(250, 251, 253); doc.setDrawColor(...LINE); doc.setLineWidth(0.2); doc.rect(ML, y, CW, h, "FD");
+  doc.setDrawColor(...GOLD); doc.setLineWidth(0.7); doc.line(ML, y, ML + CW, y);
+  items.forEach(([k, v, s], i) => { const x = ML + i * w;
+    if (i){ doc.setDrawColor(...LINE); doc.setLineWidth(0.2); doc.line(x, y, x, y + h); }
+    doc.setFont("helvetica", "normal"); let ls = 6.3; doc.setFontSize(ls); while (doc.getTextWidth(T(k).toUpperCase()) > w - 5 && ls > 4.8){ ls -= 0.25; doc.setFontSize(ls); }
+    doc.setTextColor(...MUTED); doc.text(T(k).toUpperCase(), x + 3, y + 4.2);
+    doc.setFont("helvetica", "bold"); let fs = 13.5; doc.setFontSize(fs); while (doc.getTextWidth(T(v)) > w - 6 && fs > 8){ fs -= 0.5; doc.setFontSize(fs); }
+    doc.setTextColor(...NAVY); doc.text(T(v), x + 3, y + 10.4);
+    doc.setFont("helvetica", "normal"); let ss = 6.3; doc.setFontSize(ss); while (doc.getTextWidth(T(s)) > w - 5 && ss > 4.8){ ss -= 0.25; doc.setFontSize(ss); }
+    doc.setTextColor(...MUTED); doc.text(T(s), x + 3, y + 14.4); });
+  return y + h;
+}
+function ensure(doc, y, h){ if (y + h > 283){ doc.addPage(); return 15; } return y; }
+function secT(doc, y, t){ y = ensure(doc, y, 14); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(...NAVY); doc.text(T(t), ML, y + 4); return y + 6; }
+/* rows: array of {k:'row'|'sec'|'sub'|'grand', c:[cells]} ; cells strings; colSpan via {content,colSpan} */
+function tbl(doc, y, s, head, rows, widths, aligns){
+  const kinds = rows.map(r => r.k); let zi = 0; const zebra = rows.map(r => { if (r.k === "row"){ zi++; return zi % 2 === 0; } if (r.k === "sec") zi = 0; return false; });
+  doc.autoTable({
+    startY: y, margin: {left: ML, right: ML}, tableWidth: CW, theme: "plain",
+    head: [head.map(T)], body: rows.map(r => r.c.map(c => typeof c === "object" ? {...c, content: T(c.content)} : T(c))),
+    styles: {font: "helvetica", fontSize: 7.6 * s, textColor: INK, cellPadding: {top: 1.45 * s * s, bottom: 1.45 * s * s, left: 1.8, right: 1.8}, lineColor: LINE, lineWidth: {bottom: 0.15}, valign: "middle", overflow: "linebreak"},
+    headStyles: {fillColor: NAVY, textColor: [255, 255, 255], fontStyle: "bold", lineWidth: 0},
+    columnStyles: Object.fromEntries(widths.map((w, i) => [i, {cellWidth: w, halign: aligns[i] || "left"}])),
+    didParseCell(d){
+      if (d.section === "head"){ d.cell.styles.halign = aligns[d.column.index] || "left"; return; }
+      const k = kinds[d.row.index];
+      if (k === "row" && zebra[d.row.index]) d.cell.styles.fillColor = ZEBRA;
+      if (k === "sec"){ d.cell.styles.fillColor = SUBC; d.cell.styles.fontStyle = "bold"; }
+      if (k === "sub"){ d.cell.styles.fillColor = SUBT; d.cell.styles.fontStyle = "bold"; }
+      if (k === "grand"){ d.cell.styles.fillColor = NAVY; d.cell.styles.textColor = [255, 255, 255]; d.cell.styles.fontStyle = "bold"; d.cell.styles.lineWidth = 0; }
+    },
+    didDrawCell(d){ if (d.section === "body" && kinds[d.row.index] === "sub"){ doc.setDrawColor(...NAVY); doc.setLineWidth(0.3); doc.line(d.cell.x, d.cell.y, d.cell.x + d.cell.width, d.cell.y); } }
+  });
+  return doc.lastAutoTable.finalY;
+}
+function grandBox(doc, y, label, cents, subline){
+  const h = 17; y = ensure(doc, y, h); doc.setFillColor(...NAVY); doc.roundedRect(ML, y, CW, h, 1.2, 1.2, "F"); doc.setFillColor(...GOLD); doc.rect(ML, y, 1.4, h, "F");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(8.3); doc.setTextColor(...GOLD); doc.text(T(label).toUpperCase(), ML + 5, y + 5.5);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(7.6); doc.setTextColor(...LIGHT); doc.text(T(subline), ML + 5, y + 13);
+  const mx = ML + CW * 0.5; doc.setFontSize(7.2); doc.text("USD", mx, y + 5.5); doc.text("BDT", mx + 40, y + 5.5);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.setTextColor(255, 255, 255); doc.text("$" + usd(cents), mx, y + 13); doc.text(bdt(cents), mx + 40, y + 13);
+  return y + h;
+}
+function notesBlk(doc, y, lines){
+  doc.setFont("helvetica", "normal"); doc.setFontSize(7.2);
+  y = ensure(doc, y, 5 + sum(lines, l => 3.3 * doc.splitTextToSize(T(l), CW - 4).length));
+  doc.setFont("helvetica", "bold"); doc.setFontSize(7.8); doc.setTextColor(...INK); doc.text("Notes", ML, y + 3); y += 4.2;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(7.2); doc.setTextColor(...MUTED);
+  lines.forEach(l => { const w = doc.splitTextToSize(T(l), CW - 4); doc.text("-", ML, y + 2.6); doc.text(w, ML + 3, y + 2.6); y += 3.3 * w.length; });
+  return y;
+}
+function sigs(doc, y){
+  y = ensure(doc, y, 15); y += 9; doc.setDrawColor(...INK); doc.setLineWidth(0.2); doc.line(ML, y, ML + 55, y); doc.line(ML + CW - 55, y, ML + CW, y);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(7.6); doc.setTextColor(...MUTED); doc.text("Prepared By", ML, y + 3.8); doc.text("Approved By", ML + CW - 55, y + 3.8);
+  return y + 5;
+}
+function footer(doc, text){
+  const n = doc.getNumberOfPages();
+  for (let p = 1; p <= n; p++){ doc.setPage(p); doc.setDrawColor(...LINE); doc.setLineWidth(0.15); doc.line(ML, 286, ML + CW, 286);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(6.8); doc.setTextColor(...MUTED); doc.text(T(text), ML, 290); doc.text(`Page ${p}`, ML + CW, 290, {align: "right"}); }
+}
+function onePage(build){
+  let last = null;
+  for (const compact of [false, true]) for (const s of [1, 0.94, 0.88, 0.84, 0.8, 0.77, 0.74]){
+    const doc = new jspdf.jsPDF({unit: "mm", format: "a4", compress: true});
+    const endY = build(doc, s, compact);
+    if (doc.getNumberOfPages() === 1 && endY <= 283) return doc;
+  }
+  // does not fit on one page at a readable size: lay it out cleanly over two pages
+  last = new jspdf.jsPDF({unit: "mm", format: "a4", compress: true}); build(last, 0.9);
+  return last;
+}
+const rateTxt = () => `1 USD = ${(rateMilli() / 1000).toFixed(2)} BDT`;
+const metaStd = (second) => [["Reporting Period", APP.mi.period], second, ["Exchange Rate", rateTxt()], ["Report Date", reportDate()]];
+function reportDate(){ const v = $("rdate").value; const d = v ? new Date(v + "T00:00:00") : new Date(); return `${d.getDate()} ${MONF[d.getMonth()]} ${d.getFullYear()}`; }
+const GAP = s => 4.5 * s;
+
+/* ------------------------------ campaign detail table ------------------------------ */
+function campRows(sections, grandLabel){
+  const rows = []; let all = 0;
+  sections.forEach(({title, rows: rs, subLabel}) => {
+    if (title) rows.push({k: "sec", c: [{content: title, colSpan: 6}]});
+    rs.forEach((r, i) => rows.push({k: "row", c: [String(i + 1), r.name, r.type, r.result, usd(r.cents), bdt(r.cents)]}));
+    const st = sum(rs, r => r.cents); all += st;
+    if (subLabel) rows.push({k: "sub", c: ["", {content: subLabel, colSpan: 3}, usd(st), bdt(st)]});
+  });
+  if (grandLabel) rows.push({k: "grand", c: ["", {content: grandLabel, colSpan: 3}, usd(all), bdt(all)]});
+  return rows;
+}
+const CAMP_HEAD = ["#", "Campaign Name", "Campaign Type", "Result", "Spend (USD)", "Spend (BDT)"];
+const CAMP_W = [6, 69, 21, 42, 16, 20], CAMP_A = ["left", "left", "left", "left", "right", "right"];
+function typeRows(rs){
+  const m = new Map(); rs.forEach(r => { const a = m.get(r.type) || {n: 0, c: 0}; a.n++; a.c += r.cents; m.set(r.type, a); });
+  const items = [...m].sort((a, b) => b[1].c - a[1].c), sh = shares(items.map(([, a]) => a.c)), tot = sum(rs, r => r.cents);
+  const rows = items.map(([k, a], i) => ({k: "row", c: [k, String(a.n), usd(a.c), bdt(a.c), pct(sh[i])]}));
+  rows.push({k: "sub", c: ["Total", String(rs.length), usd(tot), bdt(tot), "100.00%"]});
+  return rows;
+}
+const TYPE_HEAD = ["Campaign Type", "Campaigns", "Spend (USD)", "Spend (BDT)", "Share"], TYPE_W = [50, 25, 33, 38, 28], TYPE_A = ["left", "right", "right", "right", "right"];
+function resRows(rs){ const m = resultTotals(rs); return [...m].map(([u, v]) => ({k: "row", c: [u, int(v)]})); }
+
+/* ------------------------------ company report (per account) ------------------------------ */
+const SUBTITLE = {EF: "Course Campaigns and Other Expenses", FP: "Book Campaigns and Other Promotion", GL: "Study Abroad Campaigns", RJ: "Page Engagement, Growth and Awareness"};
+function companyPdf(acct, comp, idx, n){
+  const camps = APP.acct[acct].camps, groups = compGroups(camps, comp), rows = camps.filter(c => c.comp === comp), tot = sum(rows, r => r.cents);
+  const multi = groups.length > 1 || (comp === "EF" || comp === "FP");
+  const letters = "ABCDE";
+  const sections = groups.map((g, i) => ({title: multi && g.label ? `${letters[i]}.  ${g.label}` : null, rows: g.rows, subLabel: multi && g.label ? `Subtotal - ${g.label.replace(/^Others - .*/, "Others")}` : null}));
+  const grand = `${groups.length > 1 || multi ? "Grand Total" : "Total"} - ${COMP[comp]}`;
+  let k4;
+  if (comp === "FP") k4 = ["Total Purchases", int(sum(rows.filter(r => r.group === "Book"), r => r.pur)), "Book campaigns (Meta Pixel)"];
+  else if (comp === "EF"){ const cr = rows.filter(r => r.group === "Course" && r.type === "Message"); k4 = ["Course Conversations", int(sum(cr, r => r.results)), "Messaging conversations started"]; }
+  else { const m = resultTotals(rows); const top = [...m].sort((a, b) => b[1] - a[1])[0] || ["Results", 0]; k4 = [top[0], int(top[1]), "Main result"]; }
+  const cnt = groups.length > 1 ? groups.map(g => `${g.rows.length} ${g.g === "Book" ? "Book" : g.g === "Course" ? "Course" : "Others"}`).join(" + ") : "with spend this month";
+  const doc = onePage((doc, s) => {
+    let y = hdr(doc, {tag: `${ACCTN[acct]} Ad Account  |  Report ${String(idx).padStart(2, "0")} of ${String(n).padStart(2, "0")}`, company: COMP[comp], subtitle: SUBTITLE[comp]});
+    y = metaRow(doc, y, metaStd(["Ad Account", ACCTN[acct]])) + 1;
+    y = kpiRow(doc, y, [["Total Spend (USD)", "$" + usd(tot), COMP[comp]], ["Total Spend (BDT)", bdt(tot), "at " + (rateMilli() / 1000).toFixed(2) + " BDT per USD"], ["Campaigns", String(rows.length), cnt], k4]) + GAP(s);
+    y = secT(doc, y, "Campaign Details");
+    y = tbl(doc, y, s, CAMP_HEAD, campRows(sections, grand), CAMP_W, CAMP_A) + GAP(s);
+    if (comp === "GL" || comp === "RJ"){ y = secT(doc, y, "Results Overview"); y = tbl(doc, y, s, ["Result", "Count"], resRows(rows), [130, 44], ["left", "right"]) + GAP(s); }
+    y = secT(doc, y, "Spend by Campaign Type"); y = tbl(doc, y, s, TYPE_HEAD, typeRows(rows), TYPE_W, TYPE_A) + GAP(s);
+    const notes = ["Only campaigns with spend in " + APP.mi.full + " are included. Result = the campaign's primary result as reported by Meta for its campaign type."];
+    if (comp === "FP"){ const bs = rows.filter(r => r.group === "Book"); const sp = sum(bs.filter(r => r.type === "Sales"), r => r.pur), op = sum(bs.filter(r => r.type !== "Sales"), r => r.pur); notes.push(`Total purchases (${int(sp + op)}) = ${int(sp)} from Sales campaigns + ${int(op)} from other Book campaigns.`); }
+    if (acct !== comp && comp !== "RJ") notes.push(`These ${COMP[comp]} campaigns were run from the ${ACCTN[acct]} ad account.`);
+    y = notesBlk(doc, y, notes); return sigs(doc, y);
+  });
+  footer(doc, `Source: Meta Ads Manager export, ${ACCTN[acct]} ad account, ${APP.mi.period}  |  ${rateTxt()}`);
+  return doc;
+}
+function acctSummaryPdf(acct, idx, n){
+  const camps = APP.acct[acct].camps, comps = ACCT_ORDER[acct].filter(c => compCents(camps, c));
+  const tot = sum(camps, c => c.cents), compC = comps.map(c => compCents(camps, c)), csh = shares(compC);
+  const lines = []; comps.forEach((c, ci) => { const gs = compGroups(camps, c); const gsh = shares(gs.map(g => g.cents), csh[ci]);
+    gs.forEach((g, gi) => lines.push({name: COMP[c] + (g.label ? " - " + g.label.replace(/ Campaigns$/, "") : ""), n: g.rows.length, kr: keyResult(c, g.g, g.rows), cents: g.cents, bp: gsh[gi]})); });
+  const doc = onePage((doc, s) => {
+    let y = hdr(doc, {tag: `${ACCTN[acct]} Ad Account  |  Consolidated Report`, company: "Account Summary", subtitle: comps.map(c => COMP[c]).join("  |  ")});
+    y = metaRow(doc, y, metaStd(["Ad Account", ACCTN[acct]])) + 1;
+    y = kpiRow(doc, y, [["Grand Total (USD)", "$" + usd(tot), ACCTN[acct] + " ad account"], ["Grand Total (BDT)", bdt(tot), "at " + (rateMilli() / 1000).toFixed(2) + " BDT per USD"], ["Campaigns", String(camps.length), "with spend this month"], ["Exchange Rate", (rateMilli() / 1000).toFixed(2), "BDT per 1 USD"]]) + GAP(s);
+    y = secT(doc, y, "Spend by Company");
+    const r1 = lines.map((l, i) => ({k: "row", c: [String(i + 1), l.name, String(l.n), l.kr, usd(l.cents), bdt(l.cents), pct(l.bp)]}));
+    r1.push({k: "grand", c: ["", "Grand Total", String(camps.length), "", usd(tot), bdt(tot), "100.00%"]});
+    y = tbl(doc, y, s, ["#", "Company / Category", "Campaigns", "Key Result", "Spend (USD)", "Spend (BDT)", "Share"], r1, [6, 50, 16, 42, 19, 25, 16], ["left", "left", "right", "left", "right", "right", "right"]) + GAP(s);
+    y = secT(doc, y, "Company Totals");
+    const r2 = comps.map((c, i) => ({k: "row", c: [COMP[c], compGroups(camps, c).map(g => (g.label ? g.label.replace(/ Campaigns$/, "").replace(/^Others - .*/, "Others") : COMP[c]) + " $" + usd(g.cents)).join(" + "), usd(compC[i]), bdt(compC[i]), pct(csh[i])]}));
+    r2.push({k: "grand", c: ["Grand Total", "", usd(tot), bdt(tot), "100.00%"]});
+    y = tbl(doc, y, s, ["Company", "Included", "Spend (USD)", "Spend (BDT)", "Share"], r2, [42, 62, 22, 28, 20], ["left", "left", "right", "right", "right"]) + GAP(s);
+    y = secT(doc, y, "Spend by Campaign Type (All Companies)"); y = tbl(doc, y, s, TYPE_HEAD, typeRows(camps), TYPE_W, TYPE_A) + GAP(s);
+    y = notesBlk(doc, y, [`Data source: ${ACCTN[acct]} ad account only. The file lists ${APP.acct[acct].rows.length} campaigns; ${camps.length} had spend in ${APP.mi.full} and all are included.`, "This report is separate from the other ad account's report and is not combined with it.", `BDT amounts are calculated at a flat rate of ${(rateMilli() / 1000).toFixed(2)} BDT per 1 USD.`]);
+    return sigs(doc, y);
+  });
+  footer(doc, `Source: Meta Ads Manager export, ${ACCTN[acct]} ad account, ${APP.mi.period}  |  ${rateTxt()}`);
+  return doc;
+}
+function otherPdf(){
+  const items = APP.other.items, tot = sum(items, i => i.cents);
+  const m = new Map(); items.forEach(i => { const a = m.get(i.tool) || {n: 0, c: 0}; a.n++; a.c += i.cents; m.set(i.tool, a); });
+  const tools = [...m].sort((a, b) => b[1].c - a[1].c), sh = shares(tools.map(([, a]) => a.c));
+  const doc = onePage((doc, s) => {
+    let y = hdr(doc, {tag: "Other Costs Report", company: "Other Costs", subtitle: "Software Subscriptions, Meta Pay and Payment Charges", right: "Other Costs Report"});
+    y = metaRow(doc, y, [["Reporting Period", APP.mi.period], ["Exchange Rate", rateTxt()], ["Transactions", items.length + " entries"], ["Report Date", reportDate()]]) + 1;
+    const top = tools[0];
+    y = kpiRow(doc, y, [["Total (USD)", "$" + usd(tot), "All other costs"], ["Total (BDT)", bdt(tot), "at " + (rateMilli() / 1000).toFixed(2) + " BDT per USD"], ["Entries", String(items.length), tools.length + " tools / services"], ["Largest Item", top[0], `$${usd(top[1].c)} in ${top[1].n} payment${top[1].n > 1 ? "s" : ""}`]]) + GAP(s);
+    y = secT(doc, y, "Transaction Details");
+    const r1 = items.map((i, k) => ({k: "row", c: [String(k + 1), i.date, i.tool, i.detail || "-", usd(i.cents), bdt(i.cents)]})); r1.push({k: "grand", c: ["", {content: "Total", colSpan: 3}, usd(tot), bdt(tot)]});
+    y = tbl(doc, y, s, ["#", "Date", "Tool / Service", "Details", "Amount (USD)", "Amount (BDT)"], r1, [8, 28, 48, 30, 28, 32], ["left", "left", "left", "left", "right", "right"]) + GAP(s);
+    y = secT(doc, y, "Summary by Tool / Service");
+    const r2 = tools.map(([t, a], i) => ({k: "row", c: [t, String(a.n), usd(a.c), bdt(a.c), pct(sh[i])]})); r2.push({k: "grand", c: ["Total", String(items.length), usd(tot), bdt(tot), "100.00%"]});
+    y = tbl(doc, y, s, ["Tool / Service", "Entries", "Amount (USD)", "Amount (BDT)", "Share"], r2, [56, 22, 32, 36, 28], ["left", "right", "right", "right", "right"]) + GAP(s) + 1;
+    y = grandBox(doc, y, "Grand Total - Other Costs", tot, `${APP.mi.full}  |  ${items.length} entries  |  ${rateTxt()}`) + GAP(s);
+    const nl = []; items.filter(i => i.detail).forEach(i => nl.push(`${i.tool} = ${i.detail} = $${usd(i.cents)}.`)); nl.push(`BDT amounts are calculated at a flat rate of ${(rateMilli() / 1000).toFixed(2)} BDT per 1 USD.`);
+    y = notesBlk(doc, y, nl); return sigs(doc, y);
+  });
+  footer(doc, `Other Costs - ${APP.mi.full}  |  ${rateTxt()}`);
+  return doc;
+}
+const CATL = {Course: "Course", Page: "Page Promo", Recruitment: "Recruitment", Book: "Book", Others: "Page Promo"};
+const SUBT5 = {EF: "Course, Page Promotion, Recruitment and Other Costs - all ad accounts", FP: "Book Campaigns and Page Promotion - all ad accounts", GL: "Study Abroad Campaigns - all ad accounts", RJ: "Page Engagement, Growth and Awareness - all ad accounts"};
+function companyAllPdf(comp, M, idx, n){
+  const S = M.accts.map(a => ({acct: a, label: `${ACCTN[a]} Ad Account`, rows: M.camps(a).filter(c => c.comp === comp)})).filter(x => x.rows.length).map(x => ({...x, cents: sum(x.rows, r => r.cents)}));
+  const withOC = comp === "EF" && M.other.length > 0;
+  const tm = new Map(); M.other.forEach(i => { const a = tm.get(i.tool) || {n: 0, c: 0, d: []}; a.n++; a.c += i.cents; if (i.detail) a.d.push(i.detail); tm.set(i.tool, a); });
+  const tools = [...tm].sort((a, b) => b[1].c - a[1].c);
+  const pl = k => k > 1 ? "s" : "";
+  const parts = S.map(x => ({label: "From " + x.label, cnt: `${x.rows.length} campaign${pl(x.rows.length)}`, cents: x.cents}));
+  if (withOC) parts.push({label: "Other Costs (subscriptions and payment charges)", cnt: `${M.other.length} entries`, cents: M.otherC});
+  const tot = sum(parts, p => p.cents), psh = shares(parts.map(p => p.cents)), all = S.flatMap(x => x.rows);
+  const showCat = comp === "EF" || comp === "FP";
+  const H = showCat ? ["#", "Campaign Name", "Category", "Result", "USD", "BDT"] : ["#", "Campaign Name", "Type", "Result", "USD", "BDT"];
+  const W = showCat ? [6, 85, 18, 29, 15, 21] : [6, 74, 22, 36, 15, 21];
+  const A = ["left", "left", "left", "left", "right", "right"];
+  const nc = H.length, body = [];
+  S.forEach((x, i) => { const nn = String(i + 1).padStart(2, "0");
+    body.push({k: "sec", c: [{content: `${nn}.  Source: ${x.label}  (${x.rows.length} campaign${pl(x.rows.length)})`, colSpan: nc}]});
+    x.rows.forEach((r, j) => body.push({k: "row", c: [String(j + 1), r.name, showCat ? (CATL[r.group] || "-") : r.type, r.result, usd(r.cents), bdt(r.cents)]}));
+    body.push({k: "sub", c: ["", {content: `Subtotal - ${x.label}`, colSpan: nc - 3}, usd(x.cents), bdt(x.cents)]}); });
+  if (withOC){ const nn = String(S.length + 1).padStart(2, "0");
+    body.push({k: "sec", c: [{content: `${nn}.  Source: Other Costs  (${M.other.length} entries)`, colSpan: nc}]});
+    body.push({k: "row", c: ["1", "Subscriptions and payment charges: " + tools.map(([t]) => t).join(", "), "Other Cost", `${M.other.length} entries`, usd(M.otherC), bdt(M.otherC)]});
+    body.push({k: "sub", c: ["", {content: "Subtotal - Other Costs", colSpan: nc - 3}, usd(M.otherC), bdt(M.otherC)]}); }
+  body.push({k: "grand", c: ["", {content: `Grand Total - ${COMP[comp]}`, colSpan: nc - 3}, usd(tot), bdt(tot)]});
+  // category / type breakdown
+  let catHead, catRows, catW, catA;
+  if (comp === "EF" || comp === "FP"){
+    const defs = comp === "EF"
+      ? [["Course Campaigns", all.filter(r => r.group === "Course")], ["Page Promotion (Awareness / Engagement)", all.filter(r => r.group === "Page")], ["Recruitment (Job Post)", all.filter(r => r.group === "Recruitment")]]
+      : [["Book - Sales (Website Purchase)", all.filter(r => r.group === "Book" && r.type === "Sales")], ["Book - Message", all.filter(r => r.group === "Book" && r.type === "Message")], ["Book - Traffic", all.filter(r => r.group === "Book" && r.type === "Traffic")], ["Book - Other types", all.filter(r => r.group === "Book" && !["Sales", "Message", "Traffic"].includes(r.type))], ["Page Promotion (Awareness, Page Like, ThruPlay)", all.filter(r => r.group === "Others")]];
+    const items = defs.filter(d => d[1].length).map(([l, rs]) => ({l, n: String(rs.length), c: sum(rs, r => r.cents), p: l.startsWith("Book") ? int(sum(rs, r => r.pur)) : "-"}));
+    if (withOC) items.push({l: "Other Costs", n: String(M.other.length), c: M.otherC, p: "-"});
+    const sh = shares(items.map(i => i.c));
+    if (comp === "FP"){ catHead = ["Category", "Campaigns", "Purchases", "USD", "BDT", "Share"]; catW = [64, 20, 20, 22, 28, 20]; catA = ["left", "right", "right", "right", "right", "right"];
+      catRows = items.map((i, k) => ({k: "row", c: [i.l, i.n, i.p, usd(i.c), bdt(i.c), pct(sh[k])]})); catRows.push({k: "sub", c: ["Total", String(all.length), int(sum(all.filter(r => r.group === "Book"), r => r.pur)), usd(tot), bdt(tot), "100.00%"]}); }
+    else { catHead = ["Category", "Count", "USD", "BDT", "Share"]; catW = [74, 20, 26, 32, 22]; catA = ["left", "right", "right", "right", "right"];
+      catRows = items.map((i, k) => ({k: "row", c: [i.l, i.n, usd(i.c), bdt(i.c), pct(sh[k])]})); catRows.push({k: "sub", c: ["Total", "", usd(tot), bdt(tot), "100.00%"]}); }
+  } else { catHead = TYPE_HEAD; catRows = typeRows(all); catW = TYPE_W; catA = TYPE_A; }
+  let k4;
+  if (comp === "FP") k4 = ["Total Purchases", int(sum(all.filter(r => r.group === "Book"), r => r.pur)), "Book campaigns (Meta Pixel)"];
+  else if (comp === "EF") k4 = ["Course Conversations", int(sum(all.filter(r => r.group === "Course" && r.type === "Message"), r => r.results)), "Messaging conversations started"];
+  else { const m = resultTotals(all); const t = [...m].sort((a, b) => b[1] - a[1])[0] || ["Results", 0]; k4 = [t[0], int(t[1]), "Main result"]; }
+  const doc = onePage((doc, s, compact) => {
+    let y = hdr(doc, {tag: `Company Report ${String(idx).padStart(2, "0")} of ${String(n).padStart(2, "0")}`, company: COMP[comp], subtitle: SUBT5[comp]});
+    y = metaRow(doc, y, metaStd(["Company", COMP[comp]])) + GAP(s);
+    y = secT(doc, y, "Summary by Source");
+    y = kpiRow(doc, y, [...parts.map((p, i) => [p.label.replace(/ \(subscriptions and payment charges\)/, ""), "$" + usd(p.cents), `${p.cnt}  |  BDT ${bdt(p.cents)}  |  ${pct(psh[i])}`]),
+      ["Total - " + COMP[comp], "$" + usd(tot), `BDT ${bdt(tot)}`]]) + 1.5;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(7.2); doc.setTextColor(...MUTED); doc.text(T(`${k4[0]}: ${k4[1]} (${k4[2]})`), ML, y + 2.6); y += 4 + GAP(s);
+    y = secT(doc, y, "Details by Source");
+    y = tbl(doc, y, s, H, body, W, A) + GAP(s);
+    if (!compact){ y = secT(doc, y, comp === "EF" || comp === "FP" ? "Spend by Category" : "Spend by Campaign Type");
+      y = tbl(doc, y, s, catHead, catRows, catW, catA) + GAP(s); }
+    const notes = [`${COMP[comp]} campaigns from ${S.map(x => "the " + x.label).join(" and ")} are counted together here; each section above shows where they came from.`];
+    if (withOC) notes.push(`Other Costs ($${usd(M.otherC)}, ${M.other.length} entries) are counted under English Fantasy: ` + tools.map(([tl, a]) => `${tl} $${usd(a.c)}` + (a.d.length ? ` (${a.d.join(", ")})` : "")).join(", ") + ".");
+    notes.push("Only campaigns with spend in " + APP.mi.full + " are included. Result = the campaign's primary result as reported by Meta.");
+    if (compact) notes.splice(0, 1);
+    y = notesBlk(doc, y, notes); return sigs(doc, y);
+  });
+  footer(doc, `${COMP[comp]} - Facebook Ads Expense Report - ${APP.mi.full}  |  ${rateTxt()}`);
+  return doc;
+}
+function groupPdf(M){
+  const comps = [["English Fantasy", M.EF, M.efLines], ["Fantasy Publication", M.FP, M.fpLines], ["Fantasy Global Education", M.GL, M.glLines], ["Rajon Sir Page", M.RJ, M.rjLines]].filter(x => x[1]);
+  const sh = shares(comps.map(c => c[1])), tot = M.TOTAL;
+  const doc = onePage((doc, s) => {
+    let y = hdr(doc, {tag: "All Companies  |  Final Report", company: "Grand Total Summary", subtitle: comps.map(c => c[0]).join("  |  "), right: "Consolidated Expense Summary"});
+    y = metaRow(doc, y, metaStd(["Companies", comps.length + " Companies"])) + 1;
+    y = kpiRow(doc, y, [["Grand Total (USD)", "$" + usd(tot), `All ${comps.length} companies`], ["Grand Total (BDT)", bdt(tot), "at " + (rateMilli() / 1000).toFixed(2) + " BDT per USD"], ["Companies", String(comps.length), "From the company reports"], ["Exchange Rate", (rateMilli() / 1000).toFixed(2), "BDT per 1 USD"]]) + GAP(s);
+    y = secT(doc, y, "Summary by Company");
+    const r1 = comps.map((c, i) => ({k: "row", c: [String(i + 1).padStart(2, "0"), c[0], usd(c[1]), bdt(c[1]), pct(sh[i])]})); r1.push({k: "grand", c: ["", "Grand Total - All Companies", usd(tot), bdt(tot), "100.00%"]});
+    y = tbl(doc, y, s, ["#", "Company", "Amount (USD)", "Amount (BDT)", "Share"], r1, [10, 82, 28, 32, 22], ["left", "left", "right", "right", "right"]) + GAP(s);
+    y = secT(doc, y, "Where Each Company's Cost Came From");
+    const r2 = [];
+    comps.forEach((c, i) => { r2.push({k: "sec", c: [String(i + 1).padStart(2, "0"), {content: c[0], colSpan: 3}]});
+      c[2].forEach(l => r2.push({k: "row", c: ["", l.label + (c[0] === "Fantasy Publication" && l.acct === "EF" ? " (Book campaigns)" : ""), usd(l.cents), bdt(l.cents)]}));
+      r2.push({k: "sub", c: ["", "Subtotal - " + c[0], usd(c[1]), bdt(c[1])]}); });
+    r2.push({k: "grand", c: ["", "Grand Total - All Companies", usd(tot), bdt(tot)]});
+    y = tbl(doc, y, s, ["#", "Company / Source", "Amount (USD)", "Amount (BDT)"], r2, [10, 104, 28, 32], ["left", "left", "right", "right"]) + GAP(s);
+    const r3 = M.accts.map(a => ({k: "row", c: [`${ACCTN[a]} Ad Account - total spend (${M.camps(a).length} campaigns)`, usd(M.acctTot[a]), bdt(M.acctTot[a])]}));
+    if (M.otherC) r3.push({k: "row", c: [`Other Costs (${M.other.length} entries)`, usd(M.otherC), bdt(M.otherC)]});
+    const cross = sum(M.accts, a => M.acctTot[a]) + M.otherC; r3.push({k: "sub", c: [cross === tot ? "Total - matches Grand Total above" : "Total - DOES NOT MATCH Grand Total", usd(cross), bdt(cross)]});
+    y = tbl(doc, y, s, ["Cross-check by Source", "Amount (USD)", "Amount (BDT)"], r3, [114, 28, 32], ["left", "right", "right"]) + GAP(s) + 1;
+    y = grandBox(doc, y, `Grand Total - All ${comps.length} Companies`, tot, `${APP.mi.full}  |  ${rateTxt()}`) + GAP(s);
+    y = notesBlk(doc, y, ["Each company's total includes its campaigns from every ad account. Detailed lists are in the company reports (" + comps.map(c => c[0]).join(", ") + ")."]);
+    return sigs(doc, y);
+  });
+  footer(doc, `Grand Total Summary - All Companies - ${APP.mi.full}  |  ${rateTxt()}`);
+  return doc;
+}
+
+/* ============================ build + save ============================ */
+$("buildBtn").addEventListener("click", async () => {
+  const btn = $("buildBtn"); btn.disabled = true; $("buildNote").textContent = "PDF তৈরি হচ্ছে...";
+  await new Promise(r => setTimeout(r, 30));
+  try{
+    const M = model(), tag = APP.mi.tag, files = [];
+    const add = (name, doc) => files.push({name, blob: doc.output("blob"), pages: doc.getNumberOfPages()});
+    const comps = ["EF","FP","GL","RJ"].filter(c => M[c]), n = comps.length + 1;
+    comps.forEach((c, i) => add(`${i + 1}_${COMP[c].replace(/ /g, "_")}_${tag}.pdf`, companyAllPdf(c, M, i + 1, n)));
+    add(`${n}_Grand_Total_Summary_${tag}.pdf`, groupPdf(M));
+    if ($("detailOpt").checked){
+      M.accts.forEach(a => {
+        const cs = ACCT_ORDER[a].filter(c => compCents(M.camps(a), c)), k = cs.length, pre = `Extra_${a}-Account_`;
+        cs.forEach((c, i) => add(`${pre}${i + 1}_${COMP[c].replace(/ /g, "_")}_${tag}.pdf`, companyPdf(a, c, i + 1, k)));
+        add(`${pre}${k + 1}_Summary_${tag}.pdf`, acctSummaryPdf(a, k + 1, k + 1));
+      });
+      if (M.other.length) add(`Extra_Other_Costs_${tag}.pdf`, otherPdf());
+    }
+    APP.files = files; renderFiles();
+    $("buildNote").textContent = `${files.length}টি PDF তৈরি হয়েছে।` + (files.some(f => f.pages > 1) ? " কিছু PDF এক পেজে আঁটেনি (তালিকায় চিহ্নিত)।" : "");
+  }catch(e){ console.error(e); $("buildNote").textContent = "PDF তৈরি করা যায়নি: " + e.message; }
+  btn.disabled = !APP.ready;
+});
+let DL;
+async function downloads(){ if (DL !== undefined) return DL; try{ DL = window.claude && window.claude.use ? await window.claude.use("downloads") : null; }catch(e){ DL = null; } return DL; }
+async function saveFile(name, data){
+  const d = await downloads();
+  if (!d){ // outside Claude (for example on GitHub Pages): normal browser download
+    try{ const url = URL.createObjectURL(data instanceof Blob ? data : new Blob([data])); const a = document.createElement("a"); a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000); $("buildNote").textContent = `ডাউনলোড শুরু হয়েছে: ${name}`; }
+    catch(e){ $("buildNote").textContent = "ফাইল সেভ করা যায়নি: " + e.message; }
+    return; }
+  try{ await d.save({filename: name, data}); $("buildNote").textContent = `সেভ হয়েছে: ${name}`; }
+  catch(e){ $("buildNote").textContent = e && e.code === "declined" ? "সেভ বাতিল করা হয়েছে।" : e && e.code === "rate_limited" ? "আরেকটা সেভ চলছে, একটু পরে আবার চেষ্টা করুন।" : "সেভ করা যায়নি: " + (e && (e.message || e.code)); }
+}
+function renderFiles(){
+  const el = $("out"), F = APP.files; if (!F.length){ el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="btns" style="margin-bottom:10px"><button type="button" id="zipBtn">সব PDF একসাথে সেভ করুন (ZIP)</button></div><div class="files">` +
+    F.map((f, i) => `<div class="file"><span>${esc(f.name)}${f.pages > 1 ? ` <span class="chip warn">${f.pages} পেজ</span>` : ""}</span><button class="ghost" type="button" data-i="${i}">সেভ</button></div>`).join("") + `</div>`;
+  el.querySelectorAll("button[data-i]").forEach(b => b.addEventListener("click", () => { const f = F[+b.dataset.i]; saveFile(f.name, f.blob); }));
+  $("zipBtn").addEventListener("click", async () => { const z = new JSZip(); F.forEach(f => z.file(f.name, f.blob)); const blob = await z.generateAsync({type: "blob"}); saveFile(`Ads_Reports_${APP.mi.tag}.zip`, blob); });
+}
+
+/* ============================ demo data (invented examples) ============================ */
+$("demoBtn").addEventListener("click", () => {
+  const H = '"Reporting starts","Reporting ends","Campaign name","Campaign delivery",Results,"Result indicator","Amount spent (USD)",Purchases\n';
+  const ef = H + [
+    ['2026-09-01','2026-09-30','Sales Campaign || WA 21 || Demo Teacher','active',1200,'actions:onsite_conversion.messaging_conversation_started_7d',300.50,''],
+    ['2026-09-01','2026-09-30','IELTS || 15$ || WP 23','inactive',400,'actions:onsite_conversion.messaging_conversation_started_7d',95.25,''],
+    ['2026-09-01','2026-09-30','Book || Website || Demo Combo','inactive',310,'actions:offsite_conversion.fb_pixel_purchase',250.00,312],
+    ['2026-09-01','2026-09-30','Fantasy Global || Study Abaord SMS','inactive',150,'actions:onsite_conversion.messaging_conversation_started_7d',40.10,''],
+    ['2026-09-01','2026-09-30','Graphic Designer Job Post','inactive',500,'actions:omni_landing_page_view',6.20,''],
+    ['2026-09-01','2026-09-30','Unused test','inactive','','',0,'']].map(r => r.map(v => typeof v === "string" ? `"${v}"` : v).join(",")).join("\n");
+  const fp = H + [
+    ['2026-09-01','2026-09-30','Book | Salse 5$ || Demo Video','active',2200,'actions:onsite_conversion.messaging_conversation_started_7d',410.00,18],
+    ['2026-09-01','2026-09-30','Book || Web || 10$','inactive',900,'actions:offsite_conversion.fb_pixel_purchase',700.40,905],
+    ['2026-09-01','2026-09-30','Sales Campaign || EF || Residential program','inactive',200,'actions:onsite_conversion.messaging_conversation_started_7d',50.00,''],
+    ['2026-09-01','2026-09-30','Rajon Sir Page || Like Follow || 5$','active',4000,'actions:like',15.00,''],
+    ['2026-09-01','2026-09-30','AWER & THRUPLAY | ENGAGE | RETARGET','active',30000,'video_thruplay_watched_actions',40.00,'']].map(r => r.map(v => typeof v === "string" ? `"${v}"` : v).join(",")).join("\n");
+  const mk = (txt) => parseWorkbook(XLSX.read(txt, {type: "string", raw: true}));
+  APP.acct.EF = {fileName: "demo-english-fantasy.csv", ...mk(ef)}; APP.acct.FP = {fileName: "demo-fantasy-publication.csv", ...mk(fp)};
+  $("fnEF").textContent = "ডেমো: demo-english-fantasy.csv"; $("fnFP").textContent = "ডেমো: demo-fantasy-publication.csv";
+  $("dropEF").classList.add("has"); $("dropFP").classList.add("has");
+  if (!$("rate").value) $("rate").value = "129";
+  if (!$("other").value.trim()) $("other").value = "Sep 1\tClaude\t23.23\nSep 7\tZoom\t19.1\n\tPayment Cancel\t4*0.50 = 2";
+  APP.demo = true; $("demoBanner").innerHTML = `<div class="banner warn">এখন ডেমো ডাটা দেখাচ্ছে, এগুলো বানানো উদাহরণ। আসল হিসাবের জন্য উপরে নিজের ফাইল দিন।</div>`;
+  refresh();
+});
+refresh();
+</script>
+
+</body>
+</html>
