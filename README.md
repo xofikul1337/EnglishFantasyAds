@@ -10,6 +10,7 @@ Monthly Facebook Ads expense report builder for English Fantasy, Fantasy Publica
 2. দুই ad account-এর Ads Manager export দিন (campaign level, পুরো মাস, xlsx বা csv):
    - English Fantasy ad account
    - Fantasy Publication ad account
+   - Fantasy Ads Backup ad account (ঐচ্ছিক, এই অ্যাকাউন্টে কিছু চললে)
 3. Exchange rate দিন (১ USD = কত টাকা)। একবার দিলে পরের বার মনে থাকে।
 4. Other Costs (Date, Tool, Dollar Spent) পেস্ট করুন। যেমন: `Payment Cancel	27*0.50 = 13.5`
 5. ক্যাম্পেইন যাচাই করুন। যে ক্যাম্পেইন বোঝা যায়নি সেটা হলুদ থাকবে, ড্রপডাউন থেকে কোম্পানি বেছে দিন। এই বাছাই ব্রাউজারে মনে থাকে।

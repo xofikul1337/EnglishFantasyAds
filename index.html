@@ -113,6 +113,8 @@ details summary{cursor:pointer;color:var(--navy);font-weight:600;font-size:14px}
         <input type="file" id="fileEF" accept=".csv,.xlsx,.xls"></div>
       <div class="drop" id="dropFP"><b>Fantasy Publication ad account</b><span class="fn" id="fnFP">কোনো ফাইল দেওয়া হয়নি</span>
         <input type="file" id="fileFP" accept=".csv,.xlsx,.xls"></div>
+      <div class="drop" id="dropBK"><b>Fantasy Ads Backup ad account (ঐচ্ছিক)</b><span class="fn" id="fnBK">কোনো ফাইল দেওয়া হয়নি</span>
+        <input type="file" id="fileBK" accept=".csv,.xlsx,.xls"></div>
     </div>
     <div class="fields">
       <div class="field"><label for="rate">Exchange rate (১ USD = কত টাকা)</label><input type="number" id="rate" step="0.01" min="0" placeholder="যেমন 129"></div>
@@ -159,7 +161,7 @@ const LS = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 };
-const APP = { acct:{EF:null, FP:null}, overrides: LS.get("far_overrides", {}), files:[], demo:false };
+const APP = { acct:{EF:null, FP:null, BK:null}, overrides: LS.get("far_overrides", {}), files:[], demo:false };
 
 /* ============================ money helpers (integer cents) ============================ */
 const toCents = v => { if (v == null || v === "") return 0; const n = typeof v === "number" ? v : parseFloat(String(v).replace(/[^0-9.\-]/g, "")); return isFinite(n) ? Math.round(n * 100) : 0; };
@@ -267,7 +269,8 @@ function autoClassify(name, acct){
 }
 const PICKS = [["EF","English Fantasy (Course / Page)"],["EF_JOB","English Fantasy (Recruitment)"],["FP","Fantasy Publication"],["GL","Fantasy Global Education"],["RJ","Rajon Sir Page"]];
 const COMP = {EF:"English Fantasy", FP:"Fantasy Publication", GL:"Fantasy Global Education", RJ:"Rajon Sir Page"};
-const ACCTN = {EF:"English Fantasy", FP:"Fantasy Publication"};
+const ACCTN = {EF:"English Fantasy", FP:"Fantasy Publication", BK:"Fantasy Ads Backup"};
+const ACCTS = ["EF","FP","BK"];
 const okey = (acct, name) => acct + "|" + norm(name);
 
 function classifyAll(acct){
@@ -290,7 +293,7 @@ function classifyAll(acct){
 
 /* ============================ grouping helpers ============================ */
 const GORDER = {EF:["Course","Page","Recruitment"], FP:["Book","Others"], GL:["Global"], RJ:["Rajon"]};
-const ACCT_ORDER = {EF:["EF","FP","GL","RJ"], FP:["FP","EF","GL","RJ"]};
+const ACCT_ORDER = {EF:["EF","FP","GL","RJ"], FP:["FP","EF","GL","RJ"], BK:["FP","EF","GL","RJ"]};
 function groupLabel(comp, g, rows){
   const types = [...new Set(rows.map(r => r.type))].join(", ");
   return ({Course:"Course Campaigns", Page:"Others - " + types, Recruitment:"Others - Recruitment (Job Post)", Book:"Book Campaigns", Others:"Others - " + types, Global:null, Rajon:null})[g];
@@ -348,7 +351,7 @@ function parseOther(text, mi){
 
 /* ============================ month info ============================ */
 function monthInfo(){
-  const d = (APP.acct.EF?.rows.find(r => r.start)?.start) || (APP.acct.FP?.rows.find(r => r.start)?.start);
+  const d = (APP.acct.EF?.rows.find(r => r.start)?.start) || (APP.acct.FP?.rows.find(r => r.start)?.start) || (APP.acct.BK?.rows.find(r => r.start)?.start);
   if (!d) return null;
   const end = (APP.acct.EF?.rows.find(r => r.end)?.end) || (APP.acct.FP?.rows.find(r => r.end)?.end) || new Date(d.getFullYear(), d.getMonth() + 1, 0);
   const f = x => `${String(x.getDate()).padStart(2, "0")} ${MON[x.getMonth()]} ${x.getFullYear()}`;
@@ -379,6 +382,7 @@ async function loadAcct(acct, file){
 }
 $("fileEF").addEventListener("change", e => e.target.files[0] && loadAcct("EF", e.target.files[0]));
 $("fileFP").addEventListener("change", e => e.target.files[0] && loadAcct("FP", e.target.files[0]));
+$("fileBK").addEventListener("change", e => e.target.files[0] && loadAcct("BK", e.target.files[0]));
 $("rate").addEventListener("input", () => { LS.set("far_rate", $("rate").value); refresh(); });
 $("rdate").addEventListener("input", refresh);
 $("other").addEventListener("input", () => { LS.set("far_other", $("other").value); refresh(); });
@@ -386,7 +390,7 @@ $("other").addEventListener("input", () => { LS.set("far_other", $("other").valu
 /* ============================ UI: render ============================ */
 function refresh(){
   APP.files = []; $("out").innerHTML = "";
-  ["EF","FP"].forEach(classifyAll);
+  ACCTS.forEach(classifyAll);
   const mi = monthInfo(); APP.mi = mi;
   $("monthPill").textContent = mi ? `মাস: ${mi.full}` : "মাস: ফাইল দিলে বসবে";
   APP.other = parseOther($("other").value, mi);
@@ -404,7 +408,7 @@ function renderOther(){
 let onlyReview = false;
 function renderReview(){
   const el = $("review"); const parts = [];
-  ["EF","FP"].forEach(acct => {
+  ACCTS.forEach(acct => {
     const A = APP.acct[acct]; if (!A) return;
     const fileTot = sum(A.rows, r => r.cents), n = A.camps.length, rv = A.camps.filter(c => c.review).length;
     const rows = onlyReview ? A.camps.filter(c => c.review) : A.camps;
@@ -427,7 +431,7 @@ function renderReview(){
 
 /* ============================ model for summaries + checks ============================ */
 function model(){
-  const accts = ["EF","FP"].filter(a => APP.acct[a]);
+  const accts = ACCTS.filter(a => APP.acct[a]);
   const camps = a => APP.acct[a].camps;
   const other = APP.other.items, otherC = sum(other, i => i.cents);
   const efLines = [];
@@ -445,18 +449,19 @@ function checks(M){
   const pending = M.accts.reduce((t, a) => t + M.camps(a).filter(c => c.review).length, 0);
   L.push([pending === 0, pending ? `${pending}টি ক্যাম্পেইনের কোম্পানি বেছে দেওয়া বাকি` : "সব ক্যাম্পেইনের কোম্পানি বসানো হয়েছে"]);
   L.push([rateMilli() > 0, rateMilli() ? `Exchange rate: 1 USD = ${(rateMilli() / 1000).toFixed(2)} BDT` : "Exchange rate দেওয়া হয়নি"]);
-  L.push([M.accts.length === 2, M.accts.length === 2 ? "দুই ad account-এর ফাইলই দেওয়া হয়েছে" : "একটা ad account-এর ফাইল দেওয়া হয়নি"]);
+  const main2 = !!(APP.acct.EF && APP.acct.FP);
+  L.push([main2, main2 ? `${M.accts.length}টি ad account-এর ফাইল দেওয়া হয়েছে` : "একটা ad account-এর ফাইল দেওয়া হয়নি"]);
   L.push([M.other.length > 0 && !APP.other.warns.length, M.other.length ? (APP.other.warns.length ? "Other Costs-এ কিছু লাইন ঠিক করতে হবে" : `Other Costs: ${M.other.length}টি খরচ, $${usd(M.otherC)}`) : "Other Costs দেওয়া হয়নি"]);
   M.accts.forEach(a => {
     const parts = sum(M.camps(a).filter(c => c.comp), c => c.cents);
     L.push([parts === M.acctTot[a], `${ACCTN[a]} অ্যাকাউন্ট: কোম্পানিগুলোর যোগফল $${usd(parts)}, ফাইলের মোট $${usd(M.acctTot[a])}`]);
   });
   const cross = sum(M.accts, a => M.acctTot[a]) + M.otherC;
-  if (!pending) L.push([cross === M.TOTAL, `Cross-check: দুই অ্যাকাউন্টের মোট + Other Costs = $${usd(cross)}, Grand Total = $${usd(M.TOTAL)}`]);
-  if (APP.mi && M.accts.length === 2){
-    const s = a => APP.acct[a].rows.find(r => r.start)?.start; const d1 = s("EF"), d2 = s("FP");
-    const same = d1 && d2 && d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth();
-    if (d1 && d2) L.push([same, same ? "দুই ফাইলের মাস একই" : "দুই ফাইলের মাস আলাদা, ঠিক ফাইল দিয়েছেন তো?"]);
+  if (!pending) L.push([cross === M.TOTAL, `Cross-check: সব অ্যাকাউন্টের মোট + Other Costs = $${usd(cross)}, Grand Total = $${usd(M.TOTAL)}`]);
+  if (APP.mi && M.accts.length >= 2){
+    const ds = M.accts.map(a => APP.acct[a].rows.find(r => r.start)?.start).filter(Boolean);
+    const same = ds.every(d => d.getFullYear() === ds[0].getFullYear() && d.getMonth() === ds[0].getMonth());
+    if (ds.length >= 2) L.push([same, same ? "সব ফাইলের মাস একই" : "ফাইলগুলোর মাস আলাদা, ঠিক ফাইল দিয়েছেন তো?"]);
   }
   return L;
 }
@@ -472,7 +477,7 @@ function renderSummary(){
   h += `<ul class="checks">${C.map(([ok, t]) => `<li><span class="chip ${ok ? "ok" : (/বাকি|দেওয়া হয়নি|ঠিক করতে/.test(t) ? "warn" : "bad")}">${ok ? "ঠিক" : "দেখুন"}</span><span>${esc(t)}</span></li>`).join("")}</ul>`;
   el.innerHTML = h;
   $("buildBtn").disabled = !APP.ready;
-  $("buildNote").textContent = APP.ready ? (M.accts.length === 2 && M.other.length ? "সব প্রস্তুত।" : "কিছু ইনপুট বাকি, যা আছে তা দিয়ে PDF হবে।") : "ধাপ ৩-এর হলুদ/লাল লাইনগুলো ঠিক করলে বাটন চালু হবে।";
+  $("buildNote").textContent = APP.ready ? (APP.acct.EF && APP.acct.FP && M.other.length ? "সব প্রস্তুত।" : "কিছু ইনপুট বাকি, যা আছে তা দিয়ে PDF হবে।") : "ধাপ ৩-এর হলুদ/লাল লাইনগুলো ঠিক করলে বাটন চালু হবে।";
 }
 
 /* ============================ PDF primitives (jsPDF + autotable) ============================ */
@@ -727,7 +732,8 @@ function companyAllPdf(comp, M, idx, n){
     y = tbl(doc, y, s, H, body, W, A) + GAP(s);
     if (!compact){ y = secT(doc, y, comp === "EF" || comp === "FP" ? "Spend by Category" : "Spend by Campaign Type");
       y = tbl(doc, y, s, catHead, catRows, catW, catA) + GAP(s); }
-    const notes = [`${COMP[comp]} campaigns from ${S.map(x => "the " + x.label).join(" and ")} are counted together here; each section above shows where they came from.`];
+    const srcs = S.map(x => "the " + x.label), srcTxt = srcs.length > 1 ? srcs.slice(0, -1).join(", ") + " and " + srcs[srcs.length - 1] : srcs[0];
+    const notes = [`${COMP[comp]} campaigns from ${srcTxt} are counted together here; each section above shows where they came from.`];
     if (withOC) notes.push(`Other Costs ($${usd(M.otherC)}, ${M.other.length} entries) are counted under English Fantasy: ` + tools.map(([tl, a]) => `${tl} $${usd(a.c)}` + (a.d.length ? ` (${a.d.join(", ")})` : "")).join(", ") + ".");
     notes.push("Only campaigns with spend in " + APP.mi.full + " are included. Result = the campaign's primary result as reported by Meta.");
     if (compact) notes.splice(0, 1);
@@ -753,7 +759,7 @@ function groupPdf(M){
       r2.push({k: "sub", c: ["", "Subtotal - " + c[0], usd(c[1]), bdt(c[1])]}); });
     r2.push({k: "grand", c: ["", "Grand Total - All Companies", usd(tot), bdt(tot)]});
     y = tbl(doc, y, s, ["#", "Company / Source", "Amount (USD)", "Amount (BDT)"], r2, [10, 104, 28, 32], ["left", "left", "right", "right"]) + GAP(s);
-    const r3 = M.accts.map(a => ({k: "row", c: [`${ACCTN[a]} Ad Account - total spend (${M.camps(a).length} campaigns)`, usd(M.acctTot[a]), bdt(M.acctTot[a])]}));
+    const r3 = M.accts.map(a => ({k: "row", c: [`${ACCTN[a]} Ad Account - total spend (${M.camps(a).length} campaign${M.camps(a).length > 1 ? "s" : ""})`, usd(M.acctTot[a]), bdt(M.acctTot[a])]}));
     if (M.otherC) r3.push({k: "row", c: [`Other Costs (${M.other.length} entries)`, usd(M.otherC), bdt(M.otherC)]});
     const cross = sum(M.accts, a => M.acctTot[a]) + M.otherC; r3.push({k: "sub", c: [cross === tot ? "Total - matches Grand Total above" : "Total - DOES NOT MATCH Grand Total", usd(cross), bdt(cross)]});
     y = tbl(doc, y, s, ["Cross-check by Source", "Amount (USD)", "Amount (BDT)"], r3, [114, 28, 32], ["left", "right", "right"]) + GAP(s) + 1;
