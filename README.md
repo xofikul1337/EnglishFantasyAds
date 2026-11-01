@@ -14,12 +14,11 @@ Monthly Facebook Ads expense report builder for English Fantasy, Fantasy Publica
 3. Exchange rate দিন (১ USD = কত টাকা)। একবার দিলে পরের বার মনে থাকে।
 4. Other Costs (Date, Tool, Dollar Spent) পেস্ট করুন। যেমন: `Payment Cancel	27*0.50 = 13.5`
 5. ক্যাম্পেইন যাচাই করুন। যে ক্যাম্পেইন বোঝা যায়নি সেটা হলুদ থাকবে, ড্রপডাউন থেকে কোম্পানি বেছে দিন। এই বাছাই ব্রাউজারে মনে থাকে।
-6. "PDF তৈরি করুন" চাপুন। ৫টি এক পেজের A4 PDF হবে:
-   1. English Fantasy (দুই অ্যাকাউন্টের English Fantasy ক্যাম্পেইন + Other Costs)
+6. "PDF তৈরি করুন" চাপুন। ৪টি A4 PDF হবে:
+   1. English Fantasy (সব অ্যাকাউন্টের English Fantasy ক্যাম্পেইন + Rajon Sir Page + Other Costs; ভর্তির সংখ্যা দিলে মেসেজ বনাম ভর্তির হিসাব)
    2. Fantasy Publication (যে অ্যাকাউন্টেই Book ক্যাম্পেইন থাকুক)
    3. Fantasy Global Education (দুই অ্যাকাউন্ট মিলিয়ে)
-   4. Rajon Sir Page
-   5. Grand Total Summary (সব কোম্পানি + cross-check)
+   4. Grand Total Summary (সব কোম্পানি + cross-check)
 
 ## কোম্পানি চেনার নিয়ম (ক্যাম্পেইনের নাম থেকে)
 

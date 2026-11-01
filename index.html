@@ -100,7 +100,7 @@ details summary{cursor:pointer;color:var(--navy);font-weight:600;font-size:14px}
   <header class="top">
     <div>
       <h1>Fantasy Ads Report</h1>
-      <p>দুই ad account-এর মাসিক sheet দিন। খরচ কোম্পানি অনুযায়ী ভাগ হবে, হিসাব মেলানো হবে, তারপর ৫টি A4 PDF তৈরি হবে: প্রতিটা কোম্পানির একটা, আর সব মিলিয়ে একটা Grand Total।</p>
+      <p>দুই ad account-এর মাসিক sheet দিন। খরচ কোম্পানি অনুযায়ী ভাগ হবে, হিসাব মেলানো হবে, তারপর ৪টি A4 PDF তৈরি হবে: প্রতিটা কোম্পানির একটা, আর সব মিলিয়ে একটা Grand Total।</p>
     </div>
     <span class="month-pill" id="monthPill">মাস: ফাইল দিলে বসবে</span>
   </header>
@@ -144,7 +144,7 @@ details summary{cursor:pointer;color:var(--navy);font-weight:600;font-size:14px}
 
   <section class="step" aria-labelledby="s4">
     <div class="step-h"><span class="step-n">ধাপ ৪</span><h2 id="s4">PDF তৈরি</h2>
-      <span class="hint">৫টি PDF: English Fantasy, Fantasy Publication, Fantasy Global Education, Rajon Sir Page, আর Grand Total Summary। কোনো কোম্পানির ক্যাম্পেইন যে অ্যাকাউন্ট থেকেই আসুক, সেই কোম্পানির PDF-এ যাবে, উৎস লেখা থাকবে। Other Costs থাকবে English Fantasy-র PDF-এ।</span></div>
+      <span class="hint">৪টি PDF: English Fantasy (Rajon Sir Page আর Other Costs সহ), Fantasy Publication, Fantasy Global Education, আর Grand Total Summary। কোনো কোম্পানির ক্যাম্পেইন যে অ্যাকাউন্ট থেকেই আসুক, সেই কোম্পানির PDF-এ যাবে, উৎস লেখা থাকবে। Other Costs থাকবে English Fantasy-র PDF-এ।</span></div>
     <label class="filter"><input type="checkbox" id="detailOpt"> অ্যাকাউন্ট অনুযায়ী আলাদা বিস্তারিত PDF-ও চাই (ঐচ্ছিক)</label>
     <div class="btns"><button id="buildBtn" type="button" disabled>PDF তৈরি করুন</button><span class="note" id="buildNote"></span></div>
     <div id="out"></div>
@@ -438,13 +438,14 @@ function model(){
   const other = APP.other.items, otherC = sum(other, i => i.cents);
   const efLines = [];
   accts.forEach(a => { const c = compCents(camps(a), "EF"); if (c) efLines.push({label:`From ${ACCTN[a]} Ad Account`, acct:a, cents:c}); });
+  accts.forEach(a => { const c = compCents(camps(a), "RJ"); if (c) efLines.push({label:`Rajon Sir Page (from ${ACCTN[a]} Ad Account)`, acct:a, kind:"RJ", cents:c}); });
   if (otherC) efLines.push({label:"Other Costs", kind:"OC", cents:otherC});
   const rjLines = accts.map(a => ({acct:a, label:`From ${ACCTN[a]} Ad Account`, cents:compCents(camps(a), "RJ")})).filter(x => x.cents);
   const fpLines = accts.map(a => ({acct:a, label:`From ${ACCTN[a]} Ad Account`, cents:compCents(camps(a), "FP"), rows:camps(a).filter(c => c.comp === "FP")})).filter(x => x.cents);
   const glLines = accts.map(a => ({acct:a, label:`From ${ACCTN[a]} Ad Account`, cents:compCents(camps(a), "GL"), rows:camps(a).filter(c => c.comp === "GL")})).filter(x => x.cents);
   const EF = sum(efLines, l => l.cents), FP = sum(fpLines, l => l.cents), GL = sum(glLines, l => l.cents), RJ = sum(rjLines, l => l.cents);
   const acctTot = Object.fromEntries(accts.map(a => [a, sum(APP.acct[a].rows, r => r.cents)]));
-  return {accts, camps, other, otherC, efLines, fpLines, glLines, rjLines, EF, FP, GL, RJ, TOTAL: EF + FP + GL + RJ, acctTot};
+  return {accts, camps, other, otherC, efLines, fpLines, glLines, rjLines, EF, FP, GL, RJ, TOTAL: EF + FP + GL, acctTot};
 }
 function checks(M){
   const L = [];
@@ -472,9 +473,9 @@ function renderSummary(){
   if (!M.accts.length){ el.innerHTML = `<p class="note">ক্যাম্পেইন যাচাই শেষ হলে এখানে কোম্পানি অনুযায়ী মোট আর মিলানোর ফল দেখাবে।</p>`; $("buildBtn").disabled = true; return; }
   const R = rateMilli(); const b = c => R ? bdt(c) : "-";
   const card = (k, c, cls = "") => `<div class="card ${cls}"><span class="k">${k}</span><span class="v">$${usd(c)}</span><span class="s">BDT ${b(c)}</span></div>`;
-  let h = `<div class="cards">${card("English Fantasy", M.EF)}${card("Fantasy Publication", M.FP)}${card("Fantasy Global Education", M.GL)}${card("Rajon Sir Page", M.RJ)}${card("Grand Total", M.TOTAL, "total")}</div>`;
+  let h = `<div class="cards">${card("English Fantasy", M.EF)}${card("Fantasy Publication", M.FP)}${card("Fantasy Global Education", M.GL)}${card("Grand Total", M.TOTAL, "total")}</div>`;
   const tbl = (title, lines, tot) => `<div class="tablebox"><table><thead><tr><th>${title}</th><th class="num">USD</th><th class="num">BDT</th></tr></thead><tbody>${lines.map(l => `<tr><td>${esc(l.label)}</td><td class="num">${usd(l.cents)}</td><td class="num">${b(l.cents)}</td></tr>`).join("")}<tr class="grand"><td>মোট</td><td class="num">${usd(tot)}</td><td class="num">${b(tot)}</td></tr></tbody></table></div>`;
-  h += `<div class="grid2">${tbl("English Fantasy", M.efLines, M.EF)}${tbl("Fantasy Publication", M.fpLines, M.FP)}${tbl("Fantasy Global Education", M.glLines, M.GL)}${tbl("Rajon Sir Page", M.rjLines, M.RJ)}</div>`;
+  h += `<div class="grid2">${tbl("English Fantasy", M.efLines, M.EF)}${tbl("Fantasy Publication", M.fpLines, M.FP)}${tbl("Fantasy Global Education", M.glLines, M.GL)}</div>`;
   const C = checks(M); APP.ready = C.every(c => c[0] || /Other Costs দেওয়া হয়নি|একটা ad account/.test(c[1])) && C[0][0] && C[1][0];
   h += `<ul class="checks">${C.map(([ok, t]) => `<li><span class="chip ${ok ? "ok" : (/বাকি|দেওয়া হয়নি|ঠিক করতে/.test(t) ? "warn" : "bad")}">${ok ? "ঠিক" : "দেখুন"}</span><span>${esc(t)}</span></li>`).join("")}</ul>`;
   el.innerHTML = h;
@@ -564,6 +565,19 @@ function footer(doc, text){
   const n = doc.getNumberOfPages();
   for (let p = 1; p <= n; p++){ doc.setPage(p); doc.setDrawColor(...LINE); doc.setLineWidth(0.15); doc.line(ML, 286, ML + CW, 286);
     doc.setFont("helvetica", "normal"); doc.setFontSize(6.8); doc.setTextColor(...MUTED); doc.text(T(text), ML, 290); doc.text(`Page ${p}`, ML + CW, 290, {align: "right"}); }
+}
+const BN_CACHE = new Map();
+function bnImage(text, wMm){ // Bengali needs real text shaping, so the browser draws it and the PDF gets a sharp image
+  const key = text + "|" + wMm; if (BN_CACHE.has(key)) return BN_CACHE.get(key);
+  const ppm = 12, W = Math.round(wMm * ppm), fs = 37, lh = Math.round(fs * 1.5), font = `600 ${fs}px "Hind Siliguri", "Noto Sans Bengali", "Nirmala UI", Vrinda, sans-serif`;
+  const c = document.createElement("canvas"), ctx = c.getContext("2d"); ctx.font = font;
+  const lines = []; let cur = "";
+  text.split(" ").forEach(wd => { const t2 = cur ? cur + " " + wd : wd; if (ctx.measureText(t2).width > W && cur){ lines.push(cur); cur = wd; } else cur = t2; });
+  if (cur) lines.push(cur);
+  c.width = W; c.height = lines.length * lh + Math.round(fs * 0.35);
+  ctx.font = font; ctx.fillStyle = "#1d2330"; ctx.textBaseline = "top";
+  lines.forEach((l, i) => ctx.fillText(l, 0, i * lh + Math.round(fs * 0.15)));
+  const out = {url: c.toDataURL("image/png"), h: c.height / ppm}; BN_CACHE.set(key, out); return out;
 }
 function onePage(build){
   let last = null;
@@ -681,14 +695,17 @@ function otherPdf(){
   return doc;
 }
 const CATL = {Course: "Course", Page: "Page Promo", Recruitment: "Recruitment", Book: "Book", Others: "Page Promo"};
-const SUBT5 = {EF: "Course, Page Promotion, Recruitment and Other Costs - all ad accounts", FP: "Book Campaigns and Page Promotion - all ad accounts", GL: "Study Abroad Campaigns - all ad accounts", RJ: "Page Engagement, Growth and Awareness - all ad accounts"};
+const SUBT5 = {EF: "Course, Page Promotion, Recruitment, Rajon Sir Page and Other Costs - all ad accounts", FP: "Book Campaigns and Page Promotion - all ad accounts", GL: "Study Abroad Campaigns - all ad accounts", RJ: "Page Engagement, Growth and Awareness - all ad accounts"};
 function companyAllPdf(comp, M, idx, n){
   const S = M.accts.map(a => ({acct: a, label: `${ACCTN[a]} Ad Account`, rows: M.camps(a).filter(c => c.comp === comp)})).filter(x => x.rows.length).map(x => ({...x, cents: sum(x.rows, r => r.cents)}));
   const withOC = comp === "EF" && M.other.length > 0;
+  const RJ = comp === "EF" ? M.accts.map(a => ({acct: a, label: `${ACCTN[a]} Ad Account`, rows: M.camps(a).filter(c => c.comp === "RJ")})).filter(x => x.rows.length).map(x => ({...x, cents: sum(x.rows, r => r.cents)})) : [];
+  const rjC = sum(RJ, x => x.cents), rjN = sum(RJ, x => x.rows.length);
   const tm = new Map(); M.other.forEach(i => { const a = tm.get(i.tool) || {n: 0, c: 0, d: [], v: []}; a.n++; a.c += i.cents; a.v.push(i.cents); if (i.detail) a.d.push(i.detail); tm.set(i.tool, a); });
   const tools = [...tm].sort((a, b) => b[1].c - a[1].c);
   const pl = k => k > 1 ? "s" : "";
-  const parts = S.map(x => ({label: "From " + x.label, cnt: `${x.rows.length} campaign${pl(x.rows.length)}`, cents: x.cents}));
+  const parts = S.map(x => ({label: "From " + x.label, short: `From ${x.acct === "BK" ? "Backup" : x.acct} Ad Account`, cnt: `${x.rows.length} campaign${pl(x.rows.length)}`, cents: x.cents}));
+  if (rjC) parts.push({label: "Rajon Sir Page", cnt: `${rjN} campaign${pl(rjN)}`, cents: rjC});
   if (withOC) parts.push({label: "Other Costs (subscriptions and payment charges)", cnt: `${M.other.length} entries`, cents: M.otherC});
   const tot = sum(parts, p => p.cents), psh = shares(parts.map(p => p.cents)), all = S.flatMap(x => x.rows);
   const showCat = comp === "EF" || comp === "FP";
@@ -700,7 +717,11 @@ function companyAllPdf(comp, M, idx, n){
     body.push({k: "sec", c: [{content: `${nn}.  Source: ${x.label}  (${x.rows.length} campaign${pl(x.rows.length)})`, colSpan: nc}]});
     x.rows.forEach((r, j) => body.push({k: "row", c: [String(j + 1), r.name, showCat ? (CATL[r.group] || "-") : r.type, r.result, usd(r.cents), bdt(r.cents)]}));
     body.push({k: "sub", c: ["", {content: `Subtotal - ${x.label}`, colSpan: nc - 3}, usd(x.cents), bdt(x.cents)]}); });
-  if (withOC){ const nn = String(S.length + 1).padStart(2, "0");
+  RJ.forEach((x, i) => { const nn = String(S.length + i + 1).padStart(2, "0");
+    body.push({k: "sec", c: [{content: `${nn}.  Rajon Sir Page - from ${x.label}  (${x.rows.length} campaign${pl(x.rows.length)})`, colSpan: nc}]});
+    x.rows.forEach((r, j) => body.push({k: "row", c: [String(j + 1), r.name, "Rajon Sir", r.result, usd(r.cents), bdt(r.cents)]}));
+    body.push({k: "sub", c: ["", {content: "Subtotal - Rajon Sir Page" + (RJ.length > 1 ? ` (${x.label})` : ""), colSpan: nc - 3}, usd(x.cents), bdt(x.cents)]}); });
+  if (withOC){ const nn = String(S.length + RJ.length + 1).padStart(2, "0");
     body.push({k: "sec", c: [{content: `${nn}.  Source: Other Costs  (${M.other.length} entries)`, colSpan: nc}]});
     tools.forEach(([tl, a], j) => body.push({k: "row", c: [String(j + 1), tl, "Other Cost",
       a.d.length ? a.d.join(", ") : (a.n > 1 ? `${a.n} payments: ` + a.v.map(usd).join(", ") : "1 payment"), usd(a.c), bdt(a.c)]}));
@@ -713,6 +734,7 @@ function companyAllPdf(comp, M, idx, n){
       ? [["Course Campaigns", all.filter(r => r.group === "Course")], ["Page Promotion (Awareness / Engagement)", all.filter(r => r.group === "Page")], ["Recruitment (Job Post)", all.filter(r => r.group === "Recruitment")]]
       : [["Book - Sales (Website Purchase)", all.filter(r => r.group === "Book" && r.type === "Sales")], ["Book - Message", all.filter(r => r.group === "Book" && r.type === "Message")], ["Book - Traffic", all.filter(r => r.group === "Book" && r.type === "Traffic")], ["Book - Other types", all.filter(r => r.group === "Book" && !["Sales", "Message", "Traffic"].includes(r.type))], ["Page Promotion (Awareness, Page Like, ThruPlay)", all.filter(r => r.group === "Others")]];
     const items = defs.filter(d => d[1].length).map(([l, rs]) => ({l, n: String(rs.length), c: sum(rs, r => r.cents), p: l.startsWith("Book") ? int(sum(rs, r => r.pur)) : "-"}));
+    if (rjC) items.push({l: "Rajon Sir Page", n: String(rjN), c: rjC, p: "-"});
     if (withOC) items.push({l: "Other Costs", n: String(M.other.length), c: M.otherC, p: "-"});
     const sh = shares(items.map(i => i.c));
     if (comp === "FP"){ catHead = ["Category", "Campaigns", "Purchases", "USD", "BDT", "Share"]; catW = [64, 20, 20, 22, 28, 20]; catA = ["left", "right", "right", "right", "right", "right"];
@@ -728,7 +750,7 @@ function companyAllPdf(comp, M, idx, n){
     let y = hdr(doc, {tag: `Company Report ${String(idx).padStart(2, "0")} of ${String(n).padStart(2, "0")}`, company: COMP[comp], subtitle: SUBT5[comp]});
     y = metaRow(doc, y, metaStd(["Company", COMP[comp]])) + GAP(s);
     y = secT(doc, y, "Summary by Source");
-    y = kpiRow(doc, y, [...parts.map((p, i) => [p.label.replace(/ \(subscriptions and payment charges\)/, ""), "$" + usd(p.cents), `${p.cnt}  |  BDT ${bdt(p.cents)}  |  ${pct(psh[i])}`]),
+    y = kpiRow(doc, y, [...parts.map((p, i) => [(parts.length >= 4 && p.short ? p.short : p.label).replace(/ \(subscriptions and payment charges\)/, ""), "$" + usd(p.cents), `${p.cnt}  |  BDT ${bdt(p.cents)}  |  ${pct(psh[i])}`]),
       ["Total - " + COMP[comp], "$" + usd(tot), `BDT ${bdt(tot)}`]]) + 1.5;
     const adm = parseInt($("adm").value, 10) || 0;
     if (comp === "EF" && adm > 0){
@@ -740,11 +762,11 @@ function companyAllPdf(comp, M, idx, n){
       y = kpiRow(doc, y, [["Course Messages", int(msgs), "conversations started"], ["Total Admissions", int(adm), "students enrolled"],
         ["Cost per Message", "$" + usd(perMsg), "BDT " + money(perMsgB)], ["Cost per Admission", "$" + usd(perAdm), "BDT " + money(perAdmB)],
         ["Message to Admission", pct(convBp), `1 admission per ${mpa} messages`]]) + 2.5;
-      const txt = `Course campaigns cost $${usd(crC)} (BDT ${bdt(crC)}) and brought ${int(msgs)} messages, but only ${int(adm)} students were admitted (${pct(convBp)}, about 1 admission for every ${mpa} messages). With this many messages, more admissions were expected: follow-up on the messages was not enough and needs to improve.`;
-      doc.setFont("helvetica", "bold"); doc.setFontSize(8.6); doc.setTextColor(...INK);
-      const w = doc.splitTextToSize(T(txt), CW - 6);
-      doc.setFillColor(253, 246, 233); doc.setDrawColor(...GOLD); doc.setLineWidth(0.4); doc.rect(ML, y, CW, w.length * 3.9 + 3.4, "FD");
-      doc.text(w, ML + 3, y + 4.2); y += w.length * 3.9 + 3.4 + GAP(s);
+      const bn = `কোর্স ক্যাম্পেইনে $${usd(crC)} (৳${bdt(crC)}) খরচ করে ${int(msgs)}টি মেসেজ এসেছে, কিন্তু ভর্তি হয়েছে মাত্র ${int(adm)} জন (${pct(convBp)}, অর্থাৎ প্রায় প্রতি ${mpa}টি মেসেজে 1 জন)। এত মেসেজের তুলনায় আরও বেশি ভর্তি হওয়ার কথা ছিল; মেসেজের ফলো-আপ যথেষ্ট হয়নি, এটা আরও উন্নত করতে হবে।`;
+      const img = bnImage(bn, CW - 6);
+      doc.setFillColor(253, 246, 233); doc.setDrawColor(...GOLD); doc.setLineWidth(0.4); doc.rect(ML, y, CW, img.h + 3, "FD");
+      doc.addImage(img.url, "PNG", ML + 3, y + 1.5, CW - 6, img.h); y += img.h + 3 + GAP(s);
+      APP.bnText = bn;
       APP.perf = {crC, msgs, adm, perMsg, perMsgB, perAdm, perAdmB, convBp, mpa};
     } else {
       const lead = T(`${k4[0]}: ${k4[1]}`); doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...NAVY); const lw = doc.getTextWidth(lead); doc.text(lead, ML, y + 3.4);
@@ -757,6 +779,7 @@ function companyAllPdf(comp, M, idx, n){
       y = tbl(doc, y, s, catHead, catRows, catW, catA) + GAP(s); }
     const srcs = S.map(x => "the " + x.label), srcTxt = srcs.length > 1 ? srcs.slice(0, -1).join(", ") + " and " + srcs[srcs.length - 1] : srcs[0];
     const notes = [`${COMP[comp]} campaigns from ${srcTxt} are counted together here; each section above shows where they came from.`];
+    if (rjC) notes.push(`Rajon Sir Page ($${usd(rjC)}, ${rjN} campaign${pl(rjN)} from the ${RJ.map(x => x.label).join(" and ")}) is counted under English Fantasy; see the Rajon Sir Page section above.`);
     if (withOC) notes.push(`Other Costs ($${usd(M.otherC)}, ${M.other.length} entries in ${tools.length} purposes) are counted under English Fantasy; each purpose is listed in the Other Costs section above.`);
     notes.push("Only campaigns with spend in " + APP.mi.full + " are included. Result = the campaign's primary result as reported by Meta.");
     if (compact) notes.splice(0, 1);
@@ -766,7 +789,7 @@ function companyAllPdf(comp, M, idx, n){
   return doc;
 }
 function groupPdf(M){
-  const comps = [["English Fantasy", M.EF, M.efLines], ["Fantasy Publication", M.FP, M.fpLines], ["Fantasy Global Education", M.GL, M.glLines], ["Rajon Sir Page", M.RJ, M.rjLines]].filter(x => x[1]);
+  const comps = [["English Fantasy", M.EF, M.efLines], ["Fantasy Publication", M.FP, M.fpLines], ["Fantasy Global Education", M.GL, M.glLines]].filter(x => x[1]);
   const sh = shares(comps.map(c => c[1])), tot = M.TOTAL;
   const doc = onePage((doc, s) => {
     let y = hdr(doc, {tag: "All Companies  |  Final Report", company: "Grand Total Summary", subtitle: comps.map(c => c[0]).join("  |  "), right: "Consolidated Expense Summary"});
@@ -797,11 +820,12 @@ function groupPdf(M){
 /* ============================ build + save ============================ */
 $("buildBtn").addEventListener("click", async () => {
   const btn = $("buildBtn"); btn.disabled = true; $("buildNote").textContent = "PDF তৈরি হচ্ছে...";
+  try{ await document.fonts.load('600 37px "Hind Siliguri"', "বাংলা"); }catch(e){}
   await new Promise(r => setTimeout(r, 30));
   try{
     const M = model(), tag = APP.mi.tag, files = [];
     const add = (name, doc) => files.push({name, blob: doc.output("blob"), pages: doc.getNumberOfPages()});
-    const comps = ["EF","FP","GL","RJ"].filter(c => M[c]), n = comps.length + 1;
+    const comps = ["EF","FP","GL"].filter(c => M[c]), n = comps.length + 1;
     comps.forEach((c, i) => add(`${i + 1}_${COMP[c].replace(/ /g, "_")}_${tag}.pdf`, companyAllPdf(c, M, i + 1, n)));
     add(`${n}_Grand_Total_Summary_${tag}.pdf`, groupPdf(M));
     if ($("detailOpt").checked){
