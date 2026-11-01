@@ -118,6 +118,7 @@ details summary{cursor:pointer;color:var(--navy);font-weight:600;font-size:14px}
     </div>
     <div class="fields">
       <div class="field"><label for="rate">Exchange rate (১ USD = কত টাকা)</label><input type="number" id="rate" step="0.01" min="0" placeholder="যেমন 129"></div>
+      <div class="field"><label for="adm">এই মাসে মোট ভর্তি (English Fantasy)</label><input type="number" id="adm" step="1" min="0" placeholder="যেমন 863"></div>
       <div class="field"><label for="rdate">Report date</label><input type="date" id="rdate"></div>
     </div>
     <div class="field" style="min-width:0">
@@ -385,6 +386,7 @@ $("fileFP").addEventListener("change", e => e.target.files[0] && loadAcct("FP", 
 $("fileBK").addEventListener("change", e => e.target.files[0] && loadAcct("BK", e.target.files[0]));
 $("rate").addEventListener("input", () => { LS.set("far_rate", $("rate").value); refresh(); });
 $("rdate").addEventListener("input", refresh);
+$("adm").addEventListener("input", refresh);
 $("other").addEventListener("input", () => { LS.set("far_other", $("other").value); refresh(); });
 
 /* ============================ UI: render ============================ */
@@ -728,7 +730,27 @@ function companyAllPdf(comp, M, idx, n){
     y = secT(doc, y, "Summary by Source");
     y = kpiRow(doc, y, [...parts.map((p, i) => [p.label.replace(/ \(subscriptions and payment charges\)/, ""), "$" + usd(p.cents), `${p.cnt}  |  BDT ${bdt(p.cents)}  |  ${pct(psh[i])}`]),
       ["Total - " + COMP[comp], "$" + usd(tot), `BDT ${bdt(tot)}`]]) + 1.5;
-    doc.setFont("helvetica", "normal"); doc.setFontSize(7.2); doc.setTextColor(...MUTED); doc.text(T(`${k4[0]}: ${k4[1]} (${k4[2]})`), ML, y + 2.6); y += 4 + GAP(s);
+    const adm = parseInt($("adm").value, 10) || 0;
+    if (comp === "EF" && adm > 0){
+      const cr = all.filter(r => r.group === "Course"), crC = sum(cr, r => r.cents), msgs = sum(cr.filter(r => r.type === "Message"), r => r.results);
+      const div = (a, b) => Math.floor((2 * a + b) / (2 * b)); // integer division, half-up
+      const perMsg = div(crC, msgs), perMsgB = div(bdtPaisa(crC), msgs), perAdm = div(crC, adm), perAdmB = div(bdtPaisa(crC), adm);
+      const convBp = div(adm * 10000, msgs), mpa = div(msgs, adm);
+      y += 2; y = secT(doc, y, "Course Performance: Messages vs Admissions");
+      y = kpiRow(doc, y, [["Course Messages", int(msgs), "conversations started"], ["Total Admissions", int(adm), "students enrolled"],
+        ["Cost per Message", "$" + usd(perMsg), "BDT " + money(perMsgB)], ["Cost per Admission", "$" + usd(perAdm), "BDT " + money(perAdmB)],
+        ["Message to Admission", pct(convBp), `1 admission per ${mpa} messages`]]) + 2.5;
+      const txt = `Course campaigns cost $${usd(crC)} (BDT ${bdt(crC)}) and brought ${int(msgs)} messages, but only ${int(adm)} students were admitted (${pct(convBp)}, about 1 admission for every ${mpa} messages). With this many messages, more admissions were expected: follow-up on the messages was not enough and needs to improve.`;
+      doc.setFont("helvetica", "bold"); doc.setFontSize(8.6); doc.setTextColor(...INK);
+      const w = doc.splitTextToSize(T(txt), CW - 6);
+      doc.setFillColor(253, 246, 233); doc.setDrawColor(...GOLD); doc.setLineWidth(0.4); doc.rect(ML, y, CW, w.length * 3.9 + 3.4, "FD");
+      doc.text(w, ML + 3, y + 4.2); y += w.length * 3.9 + 3.4 + GAP(s);
+      APP.perf = {crC, msgs, adm, perMsg, perMsgB, perAdm, perAdmB, convBp, mpa};
+    } else {
+      const lead = T(`${k4[0]}: ${k4[1]}`); doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...NAVY); const lw = doc.getTextWidth(lead); doc.text(lead, ML, y + 3.4);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...MUTED); doc.text(T(`(${k4[2]})`), ML + lw + 2, y + 3.4);
+      y += 5.5 + GAP(s);
+    }
     y = secT(doc, y, "Details by Source");
     y = tbl(doc, y, s, H, body, W, A) + GAP(s);
     if (!compact){ y = secT(doc, y, comp === "EF" || comp === "FP" ? "Spend by Category" : "Spend by Campaign Type");
