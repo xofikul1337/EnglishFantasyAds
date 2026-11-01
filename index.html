@@ -119,6 +119,7 @@ details summary{cursor:pointer;color:var(--navy);font-weight:600;font-size:14px}
     <div class="fields">
       <div class="field"><label for="rate">Exchange rate (১ USD = কত টাকা)</label><input type="number" id="rate" step="0.01" min="0" placeholder="যেমন 129"></div>
       <div class="field"><label for="adm">এই মাসে মোট ভর্তি (English Fantasy)</label><input type="number" id="adm" step="1" min="0" placeholder="যেমন 863"></div>
+      <div class="field"><label for="glLeads">Fantasy Global Education লিড (ঐচ্ছিক)</label><input type="number" id="glLeads" step="1" min="0" placeholder="যেমন 18"></div>
       <div class="field"><label for="rdate">Report date</label><input type="date" id="rdate"></div>
     </div>
     <div class="field" style="min-width:0">
@@ -387,6 +388,7 @@ $("fileBK").addEventListener("change", e => e.target.files[0] && loadAcct("BK", 
 $("rate").addEventListener("input", () => { LS.set("far_rate", $("rate").value); refresh(); });
 $("rdate").addEventListener("input", refresh);
 $("adm").addEventListener("input", refresh);
+$("glLeads").addEventListener("input", refresh);
 $("other").addEventListener("input", () => { LS.set("far_other", $("other").value); refresh(); });
 
 /* ============================ UI: render ============================ */
@@ -752,8 +754,21 @@ function companyAllPdf(comp, M, idx, n){
     y = secT(doc, y, "Summary by Source");
     y = kpiRow(doc, y, [...parts.map((p, i) => [(parts.length >= 4 && p.short ? p.short : p.label).replace(/ \(subscriptions and payment charges\)/, ""), "$" + usd(p.cents), `${p.cnt}  |  BDT ${bdt(p.cents)}  |  ${pct(psh[i])}`]),
       ["Total - " + COMP[comp], "$" + usd(tot), `BDT ${bdt(tot)}`]]) + 1.5;
-    const adm = parseInt($("adm").value, 10) || 0;
-    if (comp === "EF" && adm > 0){
+    const adm = parseInt($("adm").value, 10) || 0, glLeads = parseInt($("glLeads").value, 10) || 0;
+    if (comp === "GL" && glLeads > 0){
+      const lpv = sum(all.filter(r => r.unit === "Landing Page Views"), r => r.results), reachN = sum(all.filter(r => r.unit === "Reach"), r => r.results);
+      y += 2; y = secT(doc, y, "Leads and New Audience");
+      const cells = [["Total Leads", int(glLeads), "leads received this month"], ["Landing Page Visits", int(lpv), "new audience collected"]];
+      if (reachN) cells.push(["Page Reach", int(reachN), "people reached"]);
+      cells.push(["Total Spend", "$" + usd(tot), "BDT " + bdt(tot)]);
+      y = kpiRow(doc, y, cells) + 2.5;
+      const aud = [lpv ? `${int(lpv)} জনকে ওয়েবসাইট/ফর্ম পেজে এনেছে` : "", reachN ? `${int(reachN)} জনের কাছে পেজ পৌঁছেছে` : ""].filter(Boolean).join(" এবং ");
+      const bn = `এই মাসে Fantasy Global Education-এর ক্যাম্পেইনে $${usd(tot)} (৳${bdt(tot)}) খরচে ${int(glLeads)}টি লিড এসেছে। তবে এই খরচ শুধু ${int(glLeads)}টি লিডের জন্য ছিল না: লিডের পাশাপাশি একই ক্যাম্পেইনগুলো ${aud || "নতুন মানুষের কাছে পৌঁছেছে"}। এদের নতুন audience হিসেবে জমা করা হয়েছে, যাদের পরের মাসগুলোতে retarget করে আরও লিড আনা যাবে।`;
+      const img = bnImage(bn, CW - 6);
+      doc.setFillColor(253, 246, 233); doc.setDrawColor(...GOLD); doc.setLineWidth(0.4); doc.rect(ML, y, CW, img.h + 3, "FD");
+      doc.addImage(img.url, "PNG", ML + 3, y + 1.5, CW - 6, img.h); y += img.h + 3 + GAP(s);
+      APP.glText = bn; APP.glPerf = {glLeads, lpv, reachN, tot};
+    } else if (comp === "EF" && adm > 0){
       const cr = all.filter(r => r.group === "Course"), crC = sum(cr, r => r.cents), msgs = sum(cr.filter(r => r.type === "Message"), r => r.results);
       const div = (a, b) => Math.floor((2 * a + b) / (2 * b)); // integer division, half-up
       const perMsg = div(crC, msgs), perMsgB = div(bdtPaisa(crC), msgs), perAdm = div(crC, adm), perAdmB = div(bdtPaisa(crC), adm);
