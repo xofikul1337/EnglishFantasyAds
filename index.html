@@ -120,6 +120,7 @@ details summary{cursor:pointer;color:var(--navy);font-weight:600;font-size:14px}
       <div class="field"><label for="rate">Exchange rate (১ USD = কত টাকা)</label><input type="number" id="rate" step="0.01" min="0" placeholder="যেমন 129"></div>
       <div class="field"><label for="adm">এই মাসে মোট ভর্তি (English Fantasy)</label><input type="number" id="adm" step="1" min="0" placeholder="যেমন 863"></div>
       <div class="field"><label for="glLeads">Fantasy Global Education লিড (ঐচ্ছিক)</label><input type="number" id="glLeads" step="1" min="0" placeholder="যেমন 18"></div>
+      <div class="field"><label for="fpSales">মোট বই বিক্রি (Fantasy Publication)</label><input type="number" id="fpSales" step="1" min="0" placeholder="যেমন 14429"></div>
       <div class="field"><label for="rdate">Report date</label><input type="date" id="rdate"></div>
     </div>
     <div class="field" style="min-width:0">
@@ -389,6 +390,7 @@ $("rate").addEventListener("input", () => { LS.set("far_rate", $("rate").value);
 $("rdate").addEventListener("input", refresh);
 $("adm").addEventListener("input", refresh);
 $("glLeads").addEventListener("input", refresh);
+$("fpSales").addEventListener("input", refresh);
 $("other").addEventListener("input", () => { LS.set("far_other", $("other").value); refresh(); });
 
 /* ============================ UI: render ============================ */
@@ -754,7 +756,7 @@ function companyAllPdf(comp, M, idx, n){
     y = secT(doc, y, "Summary by Source");
     y = kpiRow(doc, y, [...parts.map((p, i) => [(parts.length >= 4 && p.short ? p.short : p.label).replace(/ \(subscriptions and payment charges\)/, ""), "$" + usd(p.cents), `${p.cnt}  |  BDT ${bdt(p.cents)}  |  ${pct(psh[i])}`]),
       ["Total - " + COMP[comp], "$" + usd(tot), `BDT ${bdt(tot)}`]]) + 1.5;
-    const adm = parseInt($("adm").value, 10) || 0, glLeads = parseInt($("glLeads").value, 10) || 0;
+    const adm = parseInt($("adm").value, 10) || 0, glLeads = parseInt($("glLeads").value, 10) || 0, fpSales = parseInt($("fpSales").value, 10) || 0;
     if (comp === "GL" && glLeads > 0){
       const lpv = sum(all.filter(r => r.unit === "Landing Page Views"), r => r.results), reachN = sum(all.filter(r => r.unit === "Reach"), r => r.results);
       y += 2; y = secT(doc, y, "Leads and New Audience");
@@ -768,6 +770,18 @@ function companyAllPdf(comp, M, idx, n){
       doc.setFillColor(253, 246, 233); doc.setDrawColor(...GOLD); doc.setLineWidth(0.4); doc.rect(ML, y, CW, img.h + 3, "FD");
       doc.addImage(img.url, "PNG", ML + 3, y + 1.5, CW - 6, img.h); y += img.h + 3 + GAP(s);
       APP.glText = bn; APP.glPerf = {glLeads, lpv, reachN, tot};
+    } else if (comp === "FP" && fpSales > 0){
+      const bk = all.filter(r => r.group === "Book"), bkC = sum(bk, r => r.cents), wp = sum(bk, r => r.pur), bm = sum(bk.filter(r => r.type === "Message"), r => r.results);
+      const div = (a, b) => Math.floor((2 * a + b) / (2 * b)), pot = wp + bm;
+      const perSale = div(bkC, fpSales), perSaleB = div(bdtPaisa(bkC), fpSales), potC = div(bkC, pot), potB = div(bdtPaisa(bkC), pot), convBp = div(fpSales * 10000, pot);
+      y += 2; y = secT(doc, y, "Book Sales Performance");
+      y = kpiRow(doc, y, [["Total Book Sales", int(fpSales), "actual orders this month"], ["Website Purchases", int(wp), "Meta Pixel"], ["Book Messages", int(bm), "conversations started"],
+        ["Cost per Sale", "$" + usd(perSale), "BDT " + money(perSaleB)], ["If All Converted", "$" + usd(potC), "BDT " + money(potB) + " per sale"]]) + 2.5;
+      const bn = `এই মাসে বইয়ের ক্যাম্পেইনে $${usd(bkC)} (৳${bdt(bkC)}) খরচ হয়েছে এবং মোট ${int(fpSales)}টি বই বিক্রি হয়েছে, অর্থাৎ প্রতি বিক্রিতে খরচ $${usd(perSale)} (৳${money(perSaleB)})। অথচ Meta অনুযায়ী ওয়েবসাইটে ${int(wp)}টি purchase আর বইয়ের মেসেজ ক্যাম্পেইনে ${int(bm)}টি মেসেজ এসেছে, মোট ${int(pot)}টি বিক্রির সুযোগ; এর মধ্যে বিক্রি হয়েছে ${pct(convBp)}। মেসেজগুলোর ঠিকমতো ফলো-আপ হলে আরও বেশি বিক্রি হওয়ার কথা ছিল। সব সুযোগ বিক্রিতে রূপ নিলে প্রতি বিক্রির খরচ $${usd(perSale)} (৳${money(perSaleB)}) থেকে কমে $${usd(potC)} (৳${money(potB)}) হতো।`;
+      const img = bnImage(bn, CW - 6);
+      doc.setFillColor(253, 246, 233); doc.setDrawColor(...GOLD); doc.setLineWidth(0.4); doc.rect(ML, y, CW, img.h + 3, "FD");
+      doc.addImage(img.url, "PNG", ML + 3, y + 1.5, CW - 6, img.h); y += img.h + 3 + GAP(s);
+      APP.fpText = bn; APP.fpPerf = {bkC, wp, bm, pot, perSale, perSaleB, potC, potB, convBp};
     } else if (comp === "EF" && adm > 0){
       const cr = all.filter(r => r.group === "Course"), crC = sum(cr, r => r.cents), msgs = sum(cr.filter(r => r.type === "Message"), r => r.results);
       const div = (a, b) => Math.floor((2 * a + b) / (2 * b)); // integer division, half-up
