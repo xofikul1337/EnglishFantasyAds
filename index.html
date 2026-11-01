@@ -228,7 +228,8 @@ function typeOf(ind){
   if (s.includes("thruplay")) return {type:"ThruPlay", unit:"ThruPlays"};
   if (s.includes("post_engagement")) return {type:"Engagement", unit:"Engagements"};
   if (s.includes("video_view")) return {type:"Video View", unit:"Video Views"};
-  if (s.includes("leadgen") || /\blead/.test(s)) return {type:"Lead Form", unit:"Leads"};
+  if (s.includes("leadgen")) return {type:"Lead Form", unit:"Leads"};
+  if (s.includes("lead")) return {type:"Lead", unit:"Leads"};
   if (/(^|[:._])like$/.test(s) || s.includes("page_like")) return {type:"Page Like", unit:"Page Likes"};
   if (/(^|[:._])reach$/.test(s)) return {type:"Awareness", unit:"Reach"};
   if (s.includes("call")) return {type:"Calls", unit:"Calls"};
@@ -312,7 +313,7 @@ function keyResult(comp, g, rows){
 }
 
 /* ============================ other costs ============================ */
-const TOOLMAP = {"open ai":"OpenAI","openai":"OpenAI","chatgpt":"OpenAI","chat gpt":"OpenAI","meta pay":"Meta Pay","metapay":"Meta Pay","zoom":"Zoom","claude":"Claude","adobe":"Adobe","workspace":"Workspace","google workspace":"Google Workspace","payment cancel":"Payment Cancel","canva":"Canva","capcut":"CapCut","cap cut":"CapCut","freepik":"Freepik","envato":"Envato"};
+const TOOLMAP = {"open ai":"OpenAI","openai":"OpenAI","meta pay":"Meta Pay","metapay":"Meta Pay","zoom":"Zoom","claude":"Claude","adobe":"Adobe","workspace":"Workspace","google workspace":"Google Workspace","payment cancel":"Payment Cancel","canva":"Canva","capcut":"CapCut","cap cut":"CapCut","freepik":"Freepik","envato":"Envato"};
 function parseOther(text, mi){
   const out = [], warns = [];
   text.split(/\r?\n/).forEach((line, li) => {
@@ -324,11 +325,12 @@ function parseOther(text, mi){
     if (parts.length >= 3){ dateS = parts[0].trim(); tool = parts[1].trim(); amtS = parts.slice(2).join(" ").trim(); }
     else { tool = parts[0].trim(); amtS = parts[1].trim(); }
     let detail = "", cents = 0;
+    const qtyTxt = p => { const qa = Number.isInteger(p.a), qb = Number.isInteger(p.b); const [q, pr] = (!qa && qb) ? [p.b, p.a] : [p.a, p.b]; return `${q} x $${pr.toFixed(2)}`; };
     const prod = s => { const m = s.match(/([\d.]+)\s*[*x×]\s*\$?\s*([\d.]+)/i); return m ? {a:+m[1], b:+m[2]} : null; };
     if (amtS.includes("=")){
       const [l, r] = amtS.split("="); cents = toCents(r); const p = prod(l);
-      if (p){ detail = `${p.a} x $${p.b.toFixed(2)}`; if (Math.round(p.a * p.b * 100) !== cents) warns.push(`${tool}: ${l.trim()} = ${(p.a * p.b).toFixed(2)}, কিন্তু লেখা আছে ${r.trim()}`); }
-    } else { const p = prod(amtS); if (p){ detail = `${p.a} x $${p.b.toFixed(2)}`; cents = Math.round(p.a * p.b * 100); } else cents = toCents(amtS); }
+      if (p){ detail = qtyTxt(p); if (Math.round(p.a * p.b * 100) !== cents) warns.push(`${tool}: ${l.trim()} = ${(p.a * p.b).toFixed(2)}, কিন্তু লেখা আছে ${r.trim()}`); }
+    } else { const p = prod(amtS); if (p){ detail = qtyTxt(p); cents = Math.round(p.a * p.b * 100); } else cents = toCents(amtS); }
     if (!cents){ warns.push(`লাইন ${li + 1}: টাকার অঙ্ক পাওয়া যায়নি`); return; }
     const key = tool.toLowerCase().replace(/\s+/g, " ").trim();
     const toolN = TOOLMAP[key] || tool.replace(/\s+/g, " ").replace(/\b\w/g, ch => ch.toUpperCase());
