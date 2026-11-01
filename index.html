@@ -683,7 +683,7 @@ const SUBT5 = {EF: "Course, Page Promotion, Recruitment and Other Costs - all ad
 function companyAllPdf(comp, M, idx, n){
   const S = M.accts.map(a => ({acct: a, label: `${ACCTN[a]} Ad Account`, rows: M.camps(a).filter(c => c.comp === comp)})).filter(x => x.rows.length).map(x => ({...x, cents: sum(x.rows, r => r.cents)}));
   const withOC = comp === "EF" && M.other.length > 0;
-  const tm = new Map(); M.other.forEach(i => { const a = tm.get(i.tool) || {n: 0, c: 0, d: []}; a.n++; a.c += i.cents; if (i.detail) a.d.push(i.detail); tm.set(i.tool, a); });
+  const tm = new Map(); M.other.forEach(i => { const a = tm.get(i.tool) || {n: 0, c: 0, d: [], v: []}; a.n++; a.c += i.cents; a.v.push(i.cents); if (i.detail) a.d.push(i.detail); tm.set(i.tool, a); });
   const tools = [...tm].sort((a, b) => b[1].c - a[1].c);
   const pl = k => k > 1 ? "s" : "";
   const parts = S.map(x => ({label: "From " + x.label, cnt: `${x.rows.length} campaign${pl(x.rows.length)}`, cents: x.cents}));
@@ -700,7 +700,8 @@ function companyAllPdf(comp, M, idx, n){
     body.push({k: "sub", c: ["", {content: `Subtotal - ${x.label}`, colSpan: nc - 3}, usd(x.cents), bdt(x.cents)]}); });
   if (withOC){ const nn = String(S.length + 1).padStart(2, "0");
     body.push({k: "sec", c: [{content: `${nn}.  Source: Other Costs  (${M.other.length} entries)`, colSpan: nc}]});
-    body.push({k: "row", c: ["1", "Subscriptions and payment charges: " + tools.map(([t]) => t).join(", "), "Other Cost", `${M.other.length} entries`, usd(M.otherC), bdt(M.otherC)]});
+    tools.forEach(([tl, a], j) => body.push({k: "row", c: [String(j + 1), tl, "Other Cost",
+      a.d.length ? a.d.join(", ") : (a.n > 1 ? `${a.n} payments: ` + a.v.map(usd).join(", ") : "1 payment"), usd(a.c), bdt(a.c)]}));
     body.push({k: "sub", c: ["", {content: "Subtotal - Other Costs", colSpan: nc - 3}, usd(M.otherC), bdt(M.otherC)]}); }
   body.push({k: "grand", c: ["", {content: `Grand Total - ${COMP[comp]}`, colSpan: nc - 3}, usd(tot), bdt(tot)]});
   // category / type breakdown
@@ -734,7 +735,7 @@ function companyAllPdf(comp, M, idx, n){
       y = tbl(doc, y, s, catHead, catRows, catW, catA) + GAP(s); }
     const srcs = S.map(x => "the " + x.label), srcTxt = srcs.length > 1 ? srcs.slice(0, -1).join(", ") + " and " + srcs[srcs.length - 1] : srcs[0];
     const notes = [`${COMP[comp]} campaigns from ${srcTxt} are counted together here; each section above shows where they came from.`];
-    if (withOC) notes.push(`Other Costs ($${usd(M.otherC)}, ${M.other.length} entries) are counted under English Fantasy: ` + tools.map(([tl, a]) => `${tl} $${usd(a.c)}` + (a.d.length ? ` (${a.d.join(", ")})` : "")).join(", ") + ".");
+    if (withOC) notes.push(`Other Costs ($${usd(M.otherC)}, ${M.other.length} entries in ${tools.length} purposes) are counted under English Fantasy; each purpose is listed in the Other Costs section above.`);
     notes.push("Only campaigns with spend in " + APP.mi.full + " are included. Result = the campaign's primary result as reported by Meta.");
     if (compact) notes.splice(0, 1);
     y = notesBlk(doc, y, notes); return sigs(doc, y);
