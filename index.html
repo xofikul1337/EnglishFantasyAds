@@ -289,7 +289,7 @@ function classifyAll(acct){
     else if (comp === "GL") group = "Global"; else if (comp === "RJ") group = "Rajon";
     let result;
     if (comp === "FP" && t.type === "Sales") result = `${int(r.pur)} Purchases`;
-    else { result = r.results ? `${int(r.results)} ${t.unit}`.trim() : "-"; if (comp === "FP" && group === "Book" && t.type !== "Sales" && r.pur) result += ` + ${int(r.pur)} Purchases`; }
+    else { result = r.results ? `${int(r.results)} ${t.unit}`.trim() : "-"; }
     return {...r, type:t.type, unit:t.unit, pick, comp, group, result, review: !pick, why: ov ? "আপনার বাছাই" : auto.why, suggest: auto.suggest, overridden: !!ov};
   }).sort((a, b) => b.cents - a.cents);
 }
@@ -812,6 +812,10 @@ function companyAllPdf(comp, M, idx, n){
       y = tbl(doc, y, s, catHead, catRows, catW, catA) + GAP(s); }
     const srcs = S.map(x => "the " + x.label), srcTxt = srcs.length > 1 ? srcs.slice(0, -1).join(", ") + " and " + srcs[srcs.length - 1] : srcs[0];
     const notes = [`${COMP[comp]} campaigns from ${srcTxt} are counted together here; each section above shows where they came from.`];
+    if (comp === "FP"){
+      const bkAll = all.filter(r => r.group === "Book"), extra = bkAll.filter(r => r.type !== "Sales" && r.pur);
+      if (extra.length) notes.push(`Website purchases tracked by Meta Pixel on non-sales campaigns: ${extra.map(r => `${r.name} (${int(r.pur)})`).join(", ")}. These are website orders by people who saw or clicked these ads, not orders from messages; they are already included in Pending Orders (Pixel) (${int(sum(bkAll, r => r.pur))}).`);
+    }
     if (rjC) notes.push(`Rajon Sir Page ($${usd(rjC)}, ${rjN} campaign${pl(rjN)} from the ${RJ.map(x => x.label).join(" and ")}) is counted under English Fantasy; see the Rajon Sir Page section above.`);
     if (withOC) notes.push(`Other Costs ($${usd(M.otherC)}, ${M.other.length} entries in ${tools.length} purposes) are counted under English Fantasy; each purpose is listed in the Other Costs section above.`);
     notes.push("Only campaigns with spend in " + APP.mi.full + " are included. Result = the campaign's primary result as reported by Meta.");
