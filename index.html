@@ -776,11 +776,8 @@ function companyAllPdf(comp, M, idx, n){
       const perSale = div(bkC, fpSales), perSaleB = div(bdtPaisa(bkC), fpSales), potC = div(bkC, pot), potB = div(bdtPaisa(bkC), pot), convBp = div(fpSales * 10000, pot);
       y += 2; y = secT(doc, y, "Book Sales Performance");
       y = kpiRow(doc, y, [["Total Book Sales", int(fpSales), "actual orders this month"], ["Website Purchases", int(wp), "Meta Pixel"], ["Book Messages", int(bm), "conversations started"],
-        ["Cost per Sale", "$" + usd(perSale), "BDT " + money(perSaleB)], ["If All Converted", "$" + usd(potC), "BDT " + money(potB) + " per sale"]]) + 2.5;
-      const bn = `এই মাসে বইয়ের ক্যাম্পেইনে $${usd(bkC)} (৳${bdt(bkC)}) খরচ হয়েছে এবং মোট ${int(fpSales)}টি বই বিক্রি হয়েছে, অর্থাৎ প্রতি বিক্রিতে খরচ $${usd(perSale)} (৳${money(perSaleB)})। অথচ Meta অনুযায়ী ওয়েবসাইটে ${int(wp)}টি purchase আর বইয়ের মেসেজ ক্যাম্পেইনে ${int(bm)}টি মেসেজ এসেছে, মোট ${int(pot)}টি বিক্রির সুযোগ; এর মধ্যে বিক্রি হয়েছে ${pct(convBp)}। মেসেজগুলোর ঠিকমতো ফলো-আপ হলে আরও বেশি বিক্রি হওয়ার কথা ছিল। সব সুযোগ বিক্রিতে রূপ নিলে প্রতি বিক্রির খরচ $${usd(perSale)} (৳${money(perSaleB)}) থেকে কমে $${usd(potC)} (৳${money(potB)}) হতো।`;
-      const img = bnImage(bn, CW - 6);
-      doc.setFillColor(253, 246, 233); doc.setDrawColor(...GOLD); doc.setLineWidth(0.4); doc.rect(ML, y, CW, img.h + 3, "FD");
-      doc.addImage(img.url, "PNG", ML + 3, y + 1.5, CW - 6, img.h); y += img.h + 3 + GAP(s);
+        ["Cost per Sale", "$" + usd(perSale), "per book sold"], ["If All Converted", "$" + usd(potC), "cost per sale"]]) + 2.5 + GAP(s);
+      const bn = "";
       APP.fpText = bn; APP.fpPerf = {bkC, wp, bm, pot, perSale, perSaleB, potC, potB, convBp};
     } else if (comp === "EF" && adm > 0){
       const cr = all.filter(r => r.group === "Course"), crC = sum(cr, r => r.cents), msgs = sum(cr.filter(r => r.type === "Message"), r => r.results);
