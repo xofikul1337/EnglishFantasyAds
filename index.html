@@ -774,9 +774,16 @@ function companyAllPdf(comp, M, idx, n){
       const bk = all.filter(r => r.group === "Book"), bkC = sum(bk, r => r.cents), wp = sum(bk, r => r.pur), bm = sum(bk.filter(r => r.type === "Message"), r => r.results);
       const div = (a, b) => Math.floor((2 * a + b) / (2 * b)), pot = wp + bm;
       const perSale = div(bkC, fpSales), perSaleB = div(bdtPaisa(bkC), fpSales), potC = div(bkC, pot), potB = div(bdtPaisa(bkC), pot), convBp = div(fpSales * 10000, pot);
-      y += 2; y = secT(doc, y, "Book Sales Performance");
-      y = kpiRow(doc, y, [["Total Book Sales", int(fpSales), "actual orders this month"], ["Website Purchases", int(wp), "Meta Pixel"], ["Book Messages", int(bm), "conversations started"],
-        ["Cost per Sale", "$" + usd(perSale), "per book sold"], ["If All Converted", "$" + usd(potC), "cost per sale"]]) + 2.5 + GAP(s);
+      y += 2; y = secT(doc, y, "Customers Brought by Book Ads");
+      y = kpiRow(doc, y, [["Book Ads Spend", "$" + usd(bkC), "BDT " + bdt(bkC)], ["Pending Orders (Pixel)", int(wp), "website orders"],
+        ["Messages", int(bm), "book message conversations"], ["Total Customers Brought", int(pot), "pending orders + messages"]]) + 1.5;
+      { const line = T(`$${usd(bkC)} spent on book ads brought ${int(pot)} customers: ${int(wp)} pending orders from the Pixel + ${int(bm)} messages.`);
+        doc.setFillColor(...NAVY); doc.rect(ML, y, CW, 8, "F"); doc.setFont("helvetica", "bold"); let fs2 = 10.5; doc.setFontSize(fs2);
+        while (doc.getTextWidth(line) > CW - 8 && fs2 > 7){ fs2 -= 0.25; doc.setFontSize(fs2); }
+        doc.setTextColor(255, 255, 255); doc.text(line, ML + CW / 2, y + 5.4, {align: "center"}); y += 8 + GAP(s); }
+      y = secT(doc, y, "Book Sales Performance");
+      y = kpiRow(doc, y, [["Total Book Sales", int(fpSales), "actual orders this month"], ["Cost per Sale", "$" + usd(perSale), "per book sold"],
+        ["If All Converted", "$" + usd(potC), "cost per sale if every order and message became a sale"]]) + 2.5 + GAP(s);
       const bn = "";
       APP.fpText = bn; APP.fpPerf = {bkC, wp, bm, pot, perSale, perSaleB, potC, potB, convBp};
     } else if (comp === "EF" && adm > 0){
